@@ -296,6 +296,15 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     )
     mapa_rv = {**mapa_rv_ganhos, **mapa_rv_extra}
 
+    # Mapa deal_id -> owner_id do deal (para validar que SDR não agendou pra si mesmo)
+    mapa_deal_owner = {}
+    for d in deals:
+        uid = d.get("user_id")
+        if isinstance(uid, dict):
+            mapa_deal_owner[d["id"]] = uid.get("id")
+        else:
+            mapa_deal_owner[d["id"]] = uid
+
     def rv_eh_valida(rv):
         if rv is None or str(rv).strip() == "":
             return True
@@ -310,7 +319,12 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     def valida(a):
         if not (a.get("done") == True or a.get("status") == "done"):
             return False
-        rv = mapa_rv.get(a.get("deal_id"))
+        # SDR não pode ter agendado para si mesmo (owner do deal != responsável da activity)
+        deal_id = a.get("deal_id")
+        deal_owner = mapa_deal_owner.get(deal_id)
+        if deal_owner and str(deal_owner) == str(user_id):
+            return False
+        rv = mapa_rv.get(deal_id)
         return rv_eh_valida(rv)
 
     reu_realizadas = [a for a in acts_sdr if valida(a)]
