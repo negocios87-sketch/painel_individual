@@ -11,7 +11,7 @@
   :root {
     --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
     --border: #222; --yellow: #f5c400; --yellow-dim: #f5c40022;
-    --white: #f0f0f0; --muted: #555; --green: #2adf8a; --red: #ff4c4c;
+    --white: #f0f0f0; --muted: #888; --green: #2adf8a; --red: #ff4c4c;
     --font-display: 'Bebas Neue', sans-serif;
     --font-body: 'DM Sans', sans-serif;
     --font-mono: 'DM Mono', monospace;
@@ -19,7 +19,6 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:var(--bg); color:var(--white); font-family:var(--font-body); min-height:100vh; padding:24px; background-image:radial-gradient(ellipse at 80% 0%,#f5c40008 0%,transparent 60%); }
 
-  /* LOADING */
   #loading { display:flex; flex-direction:column; align-items:center; justify-content:center; height:80vh; gap:16px; }
   .spinner { width:48px; height:48px; border:3px solid var(--border); border-top-color:var(--yellow); border-radius:50%; animation:spin 0.8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
@@ -28,32 +27,37 @@
   #dashboard { display:none; }
 
   /* HEADER */
-  .header { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:20px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--border); }
-  .avatar { width:72px; height:72px; border-radius:50%; background:var(--surface2); border:2px solid var(--yellow); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; color:var(--yellow); overflow:hidden; flex-shrink:0; cursor:pointer; position:relative; }
+  .header { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:24px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--border); }
+
+  /* 1 - Avatar maior */
+  .avatar { width:100px; height:100px; border-radius:50%; background:var(--surface2); border:2px solid var(--yellow); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:700; color:var(--yellow); overflow:hidden; flex-shrink:0; }
   .avatar img { width:100%; height:100%; object-fit:cover; }
-  .avatar-hint { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); font-size:8px; text-align:center; padding:2px; color:#aaa; opacity:0; transition:opacity 0.2s; }
-  .avatar:hover .avatar-hint { opacity:1; }
-  #fotoInput { display:none; }
+
   .user-name { font-family:var(--font-display); font-size:28px; letter-spacing:1px; color:var(--white); line-height:1; }
+  /* 1 - cinza mais claro no cargo e metas */
   .user-cargo { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-top:4px; }
   .metas-row { display:flex; gap:8px; margin-top:6px; }
   .meta-tag { font-family:var(--font-mono); font-size:11px; padding:3px 10px; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
   .meta-tag span { color:var(--yellow); font-weight:500; }
-  .gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .gauge-svg { width:180px; height:100px; }
-  .gauge-label { font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-  .gauge-value { font-family:var(--font-display); font-size:26px; color:var(--yellow); text-align:center; }
-  .logo-box { border:1px solid var(--border); padding:10px 20px; border-radius:6px; font-family:var(--font-display); font-size:20px; letter-spacing:3px; color:var(--yellow); background:var(--surface); text-align:center; }
 
-  /* COMISSÃO BADGE */
+  /* 2 - Gauge maior */
+  .gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .gauge-svg { width:240px; height:135px; }
+  .gauge-label { font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .gauge-value { font-family:var(--font-display); font-size:32px; color:var(--yellow); text-align:center; }
+
+  /* 3 - Logo como imagem */
+  .logo-box { border:1px solid var(--border); padding:8px 16px; border-radius:6px; background:var(--surface); display:flex; align-items:center; justify-content:center; }
+  .logo-box img { height:60px; object-fit:contain; }
+  .logo-box-fallback { font-family:var(--font-display); font-size:20px; letter-spacing:3px; color:var(--yellow); text-align:center; }
+
+  /* COMISSÃO */
   .comissao-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; padding:14px 18px; background:var(--surface); border:1px solid var(--border); border-radius:8px; }
   .comissao-badge { font-family:var(--font-mono); font-size:11px; padding:4px 12px; border-radius:4px; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
   .comissao-badge.on  { background:#2adf8a22; color:var(--green); border:1px solid var(--green); }
   .comissao-badge.off { background:#ff4c4c22; color:var(--red);   border:1px solid var(--red); }
   .comissao-info { font-size:13px; color:var(--muted); }
   .comissao-info span { color:var(--white); font-weight:600; }
-  .comissao-proj { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); text-align:right; }
-  .comissao-proj strong { display:block; font-size:16px; color:var(--green); }
 
   /* KPI GRID */
   .kpi-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-bottom:28px; }
@@ -85,8 +89,10 @@
   .data-table td.mono  { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
   .data-table td.money { font-family:var(--font-mono); color:var(--green); font-size:11px; }
   .empty-row { font-family:var(--font-mono); font-size:11px; color:var(--muted); padding:12px 0; }
-  .badge { display:inline-block; font-size:9px; font-family:var(--font-mono); padding:2px 6px; border-radius:3px; text-transform:uppercase; letter-spacing:0.5px; }
-  .badge.red { background:#ff4c4c22; color:var(--red); }
+
+  /* 7 - Link deal */
+  .deal-link { font-family:var(--font-mono); font-size:11px; color:var(--yellow); text-decoration:none; opacity:0.8; }
+  .deal-link:hover { opacity:1; text-decoration:underline; }
 
   /* FOOTER */
   .footer { display:flex; justify-content:space-between; align-items:center; margin-top:28px; padding-top:16px; border-top:1px solid var(--border); }
@@ -107,10 +113,8 @@
 
 <!-- HEADER -->
 <div class="header">
-  <div>
-    <div class="avatar" id="avatarEl">
-      <span id="avatarInitials">--</span>
-    </div>
+  <div class="avatar" id="avatarEl">
+    <span id="avatarInitials">--</span>
   </div>
   <div>
     <div class="user-name" id="userName">--</div>
@@ -120,35 +124,41 @@
       <div class="meta-tag">Meta Financeira <span id="metaFin">--</span></div>
     </div>
   </div>
+
+  <!-- 2 - Gauge maior -->
   <div class="gauge-wrap">
-    <svg class="gauge-svg" viewBox="0 0 180 100">
+    <svg class="gauge-svg" viewBox="0 0 240 135">
       <defs>
         <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#f5c400" stop-opacity="0.4"/>
+          <stop offset="0%" stop-color="#f5c400" stop-opacity="0.3"/>
           <stop offset="100%" stop-color="#f5c400"/>
         </linearGradient>
       </defs>
-      <path d="M 10 95 A 80 80 0 0 1 170 95" fill="none" stroke="#222" stroke-width="10" stroke-linecap="round"/>
-      <path d="M 10 95 A 80 80 0 0 1 170 95" fill="none" stroke="url(#gaugeGrad)" stroke-width="10" stroke-linecap="round"
-            stroke-dasharray="251" id="gaugeArc" stroke-dashoffset="251"/>
+      <path d="M 15 125 A 105 105 0 0 1 225 125" fill="none" stroke="#222" stroke-width="12" stroke-linecap="round"/>
+      <path d="M 15 125 A 105 105 0 0 1 225 125" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round"
+            stroke-dasharray="330" id="gaugeArc" stroke-dashoffset="330"/>
     </svg>
     <div class="gauge-value" id="gaugeVal">0%</div>
     <div class="gauge-label">Atingimento Geral</div>
   </div>
-  <div class="logo-box">BOARD<br>ACADEMY</div>
+
+  <!-- 3 - Logo como imagem -->
+  <div class="logo-box">
+    <img
+      src="https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.png"
+      onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.jpg'"
+      alt="Board Academy"
+    >
+  </div>
 </div>
 
-<!-- COMISSÃO -->
+<!-- COMISSÃO — 4: sem projeção -->
 <div class="comissao-bar">
   <span class="comissao-badge" id="comissaoBadge">--</span>
   <div class="comissao-info">
     Atingimento: <span id="comAtingimento">--</span> &nbsp;·&nbsp;
     Acelerador: <span id="comAcelerador">--</span> &nbsp;·&nbsp;
     Comissão estimada: <span id="comEstimada">--</span>
-  </div>
-  <div class="comissao-proj">
-    Projeção fim do mês
-    <strong id="comProjecao">--</strong>
   </div>
 </div>
 
@@ -184,9 +194,10 @@
     <div class="kpi-value yellow" id="kpiPctFin">--</div>
     <div class="kpi-sub" id="kpiPctFinSub">--</div>
   </div>
+  <!-- 6 - Qualificados em vez de desqualificados -->
   <div class="kpi-card">
-    <div class="kpi-label">% Desqualificação</div>
-    <div class="kpi-value red" id="kpiDesq">--</div>
+    <div class="kpi-label">% Qualificadas</div>
+    <div class="kpi-value green" id="kpiQualif">--</div>
     <div class="kpi-sub">das reuniões</div>
   </div>
 </div>
@@ -212,21 +223,22 @@
   <div class="table-card">
     <div class="table-title">Próximas Reuniões</div>
     <table class="data-table">
-      <thead><tr><th>Deal ID</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
+      <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
       <tbody id="tblProximas"></tbody>
     </table>
   </div>
   <div class="table-card">
     <div class="table-title">Reuniões Ganhas</div>
     <table class="data-table">
-      <thead><tr><th>ID</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
+      <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
       <tbody id="tblGanhas"></tbody>
     </table>
   </div>
+  <!-- 9 - Desq: só link e proprietário -->
   <div class="table-card">
     <div class="table-title">Reuniões Desqualificadas</div>
     <table class="data-table">
-      <thead><tr><th>Deal ID</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
+      <thead><tr><th>Lead</th><th>Desqualificado por</th></tr></thead>
       <tbody id="tblDesq"></tbody>
     </table>
   </div>
@@ -239,30 +251,16 @@
   <div class="footer-date" id="footerDate">--</div>
 </div>
 
-</div><!-- /dashboard -->
+</div>
 
 <script>
 Chart.register(ChartDataLabels);
 
-// ── CONFIG ──────────────────────────────────────────────────
-const NOME = null;
-const API_URL = '/api/sdr';
-const REFRESH_MS    = 5 * 60 * 1000; // 5 minutos
+const API_URL    = '/api/sdr';
+const REFRESH_MS = 5 * 60 * 1000;
+const PIPE_URL   = 'https://boardacademy.pipedrive.com/deal/';
 
 let chartAg = null, chartRe = null, chartVa = null;
-
-// ── FOTO ────────────────────────────────────────────────────
-function trocarFoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const el = document.getElementById('avatarEl');
-    el.innerHTML = `<img src="${ev.target.result}"><div class="avatar-hint">Trocar foto</div>`;
-    localStorage.setItem('foto_' + NOME, ev.target.result);
-  };
-  reader.readAsDataURL(file);
-}
 
 function carregarFoto(fotoUrl) {
   if (fotoUrl) {
@@ -270,24 +268,31 @@ function carregarFoto(fotoUrl) {
   }
 }
 
-// ── FORMATAÇÃO ──────────────────────────────────────────────
 const fmtMoney = v => {
   if (v >= 1000000) return 'R$ ' + (v/1000000).toFixed(1) + 'M';
   if (v >= 1000)    return 'R$ ' + (v/1000).toFixed(1).replace('.0','') + 'K';
   return 'R$ ' + v.toFixed(0);
 };
 const fmtPct  = v => v.toFixed(1) + '%';
-const fmtDate = s => s ? s.substring(0,10).split('-').reverse().join('/') : '--';
+// 8 - data em dd/mm
+const fmtDate = s => {
+  if (!s) return '--';
+  const parts = s.substring(0,10).split('-');
+  return `${parts[2]}/${parts[1]}`;
+};
+// 7 - link deal
+const dealLink = id => id
+  ? `<a class="deal-link" href="${PIPE_URL}${id}" target="_blank">#${id}</a>`
+  : '--';
 
-// ── GAUGE ───────────────────────────────────────────────────
+// 2 - Gauge com novo viewBox
 function atualizarGauge(pct) {
-  const total = 251;
+  const total = 330;
   const fill  = Math.min(pct / 100, 1) * total;
   document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', total - fill);
   document.getElementById('gaugeVal').textContent = fmtPct(pct);
 }
 
-// ── CHARTS ──────────────────────────────────────────────────
 const commonOpts = {
   responsive: true, maintainAspectRatio: false,
   plugins: {
@@ -302,27 +307,30 @@ const commonOpts = {
 };
 
 function buildChart(id, type, labels, data, color, isMoney=false) {
-  const ctx = document.getElementById(id);
+  const ctx  = document.getElementById(id);
   const opts = JSON.parse(JSON.stringify(commonOpts));
-
   if (isMoney) {
     opts.plugins.datalabels.formatter = v => v === 0 ? '' : (v/1000).toFixed(1).replace('.0','') + 'K';
     opts.scales.y.ticks.callback = v => 'R$' + (v/1000).toFixed(0) + 'k';
   }
-
   const dataset = type === 'bar'
     ? { data, backgroundColor: color + '44', borderColor: color, borderWidth:1, borderRadius:3 }
     : { data, borderColor: color, backgroundColor: color + '11', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor: color };
-
   return new Chart(ctx, { type, data:{ labels, datasets:[dataset] }, options: opts });
 }
 
+// 8 - formato dd/mm nos gráficos
+function fmtLabel(iso) {
+  const p = iso.split('-');
+  return `${p[2]}/${p[1]}`;
+}
+
 function atualizarCharts(graficos) {
-  const agLabels = graficos.serieAgendadas.map(x => x.data.substring(5).replace('-','/'));
+  const agLabels = graficos.serieAgendadas.map(x => fmtLabel(x.data));
   const agData   = graficos.serieAgendadas.map(x => x.qtd);
-  const reLabels = graficos.serieRealizadas.map(x => x.data.substring(5).replace('-','/'));
+  const reLabels = graficos.serieRealizadas.map(x => fmtLabel(x.data));
   const reData   = graficos.serieRealizadas.map(x => x.qtd);
-  const vaLabels = graficos.serieValores.map(x => x.data.substring(5).replace('-','/'));
+  const vaLabels = graficos.serieValores.map(x => fmtLabel(x.data));
   const vaData   = graficos.serieValores.map(x => x.valor);
 
   if (chartAg) chartAg.destroy();
@@ -334,7 +342,6 @@ function atualizarCharts(graficos) {
   chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
 }
 
-// ── TABELAS ─────────────────────────────────────────────────
 function renderTabela(tbodyId, rows) {
   const el = document.getElementById(tbodyId);
   if (!rows || rows.length === 0) {
@@ -344,9 +351,7 @@ function renderTabela(tbodyId, rows) {
   el.innerHTML = rows;
 }
 
-// ── RENDER PRINCIPAL ────────────────────────────────────────
 function render(d) {
-  // Header
   const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
   document.getElementById('avatarInitials').textContent = iniciais;
   document.getElementById('userName').textContent  = d.colaborador.nome;
@@ -354,47 +359,43 @@ function render(d) {
   document.getElementById('metaReu').textContent   = d.metas.meta_reu;
   document.getElementById('metaFin').textContent   = fmtMoney(d.metas.meta_fin);
 
-  // Gauge: atingimento geral
   atualizarGauge(d.comissao.atingimento);
 
-  // Comissão
   const badge = document.getElementById('comissaoBadge');
-  badge.textContent  = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
-  badge.className    = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
+  badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
+  badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
   document.getElementById('comAtingimento').textContent = fmtPct(d.comissao.atingimento);
   document.getElementById('comAcelerador').textContent  = 'x' + d.comissao.acelerador;
   document.getElementById('comEstimada').textContent    = fmtMoney(d.comissao.estimada);
-  document.getElementById('comProjecao').textContent    = fmtMoney(d.comissao.projecao.estimada);
 
-  // KPIs
-  document.getElementById('kpiAgendadas').textContent    = d.kpis.reunioesAgendadas;
-  document.getElementById('kpiRealizadas').textContent   = d.kpis.reunioesRealizadas;
+  document.getElementById('kpiAgendadas').textContent     = d.kpis.reunioesAgendadas;
+  document.getElementById('kpiRealizadas').textContent    = d.kpis.reunioesRealizadas;
   document.getElementById('kpiRealizadasSub').textContent = `de ${d.kpis.reunioesAgendadas} agendadas`;
-  document.getElementById('kpiPctReu').textContent       = fmtPct(d.kpis.pctMetaReu);
-  document.getElementById('kpiPctReuSub').textContent    = `meta: ${d.metas.meta_reu}`;
-  document.getElementById('kpiValorBruto').textContent   = fmtMoney(d.kpis.valorBruto);
-  document.getElementById('kpiValorMulti').textContent   = fmtMoney(d.kpis.valorMultiplicador);
-  document.getElementById('kpiPctFin').textContent       = fmtPct(d.kpis.pctMetaFin);
-  document.getElementById('kpiPctFinSub').textContent    = `meta: ${fmtMoney(d.metas.meta_fin)}`;
-  document.getElementById('kpiDesq').textContent         = fmtPct(d.kpis.pctDesqualificacao);
+  document.getElementById('kpiPctReu').textContent        = fmtPct(d.kpis.pctMetaReu);
+  document.getElementById('kpiPctReuSub').textContent     = `meta: ${d.metas.meta_reu}`;
+  document.getElementById('kpiValorBruto').textContent    = fmtMoney(d.kpis.valorBruto);
+  document.getElementById('kpiValorMulti').textContent    = fmtMoney(d.kpis.valorMultiplicador);
+  document.getElementById('kpiPctFin').textContent        = fmtPct(d.kpis.pctMetaFin);
+  document.getElementById('kpiPctFinSub').textContent     = `meta: ${fmtMoney(d.metas.meta_fin)}`;
+  // 6 - % qualificadas = 100 - % desqualificadas
+  document.getElementById('kpiQualif').textContent        = fmtPct(Math.max(0, 100 - d.kpis.pctDesqualificacao));
 
-  // Charts
   atualizarCharts(d.graficos);
 
-  // Tabela Próximas
+  // 7 - deal como link nas próximas reuniões
   renderTabela('tblProximas', d.tabelas.proximasReunioes.map(r =>
     `<tr>
-      <td class="mono">#${r.deal_id || '--'}</td>
+      <td>${dealLink(r.deal_id)}</td>
       <td>${r.nome || '--'}</td>
       <td class="mono">${fmtDate(r.data)}</td>
       <td class="mono">${r.hora || '--'}</td>
     </tr>`
   ).join(''));
 
-  // Tabela Ganhas
+  // 7 - deal como link nas ganhas
   renderTabela('tblGanhas', d.tabelas.reunioesGanhas.map(r =>
     `<tr>
-      <td class="mono">#${r.deal_id}</td>
+      <td>${dealLink(r.deal_id)}</td>
       <td>${r.nome || '--'}</td>
       <td class="mono">${fmtDate(r.data_ganho)}</td>
       <td class="money">${fmtMoney(r.valor_bruto)}</td>
@@ -402,28 +403,21 @@ function render(d) {
     </tr>`
   ).join(''));
 
-  // Tabela Desq
+  // 9 - desq: só link e proprietário
   renderTabela('tblDesq', d.tabelas.reunioesDesq.map(r =>
     `<tr>
-      <td class="mono">#${r.deal_id || '--'}</td>
-      <td>${r.nome || '--'}</td>
-      <td class="mono">${fmtDate(r.data)}</td>
-      <td class="mono">${r.hora || '--'}</td>
+      <td>${dealLink(r.deal_id)}</td>
+      <td>${r.proprietario || '--'}</td>
     </tr>`
   ).join(''));
 
-  // Footer
   document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
-
-  // Foto salva
   carregarFoto(d.colaborador.foto);
 
-  // Mostra dashboard
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
 }
 
-// ── FETCH ────────────────────────────────────────────────────
 async function fetchDados() {
   try {
     const resp = await fetch(API_URL);
@@ -437,7 +431,6 @@ async function fetchDados() {
   }
 }
 
-// ── INIT ─────────────────────────────────────────────────────
 fetchDados();
 setInterval(fetchDados, REFRESH_MS);
 </script>
