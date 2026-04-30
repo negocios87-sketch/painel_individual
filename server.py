@@ -425,7 +425,39 @@ def api_sdr():
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
-
+        
+@app.route("/debug/atividades")
+def debug_atividades():
+    if "nome" not in session:
+        return jsonify({"erro": "não autenticado"}), 401
+    nome = "Guilherme Oliveira"
+    users = buscar_users()
+    user_id = encontrar_user_id(users, nome)
+    activities = buscar_activities()
+    hoje = date.today()
+    mes_atual = hoje.strftime("%Y-%m")
+    acts_sdr = [a for a in activities
+                if str(a.get("owner_id")) == str(user_id)
+                and str(a.get("due_date", ""))[:7] == mes_atual]
+    deals = buscar_deals()
+    mapa_rv = {d["id"]: cf(d, CF_REUNIAO_VALID) for d in deals}
+    realizadas = [a for a in acts_sdr
+                  if (a.get("done") == True or a.get("status") == "done")]
+    return jsonify({
+        "total_acts_sdr": len(acts_sdr),
+        "total_realizadas": len(realizadas),
+        "por_rv": {
+            "none_ou_vazio": len([a for a in realizadas if mapa_rv.get(a.get("deal_id")) is None or str(mapa_rv.get(a.get("deal_id"),"")).strip() == ""]),
+            "sim_411": len([a for a in realizadas if str(mapa_rv.get(a.get("deal_id"),"")) == "411"]),
+            "sim_texto": len([a for a in realizadas if norm(str(mapa_rv.get(a.get("deal_id"),"") or "")) == "sim"]),
+            "nao_412": len([a for a in realizadas if str(mapa_rv.get(a.get("deal_id"),"")) == "412"]),
+            "nao_texto": len([a for a in realizadas if norm(str(mapa_rv.get(a.get("deal_id"),"") or "")) == "nao"]),
+            "no_show": len([a for a in realizadas if str(mapa_rv.get(a.get("deal_id"),"")) == "481"]),
+            "no_show_texto": len([a for a in realizadas if norm(str(mapa_rv.get(a.get("deal_id"),"") or "")) == "no show"]),
+            "deal_id_none": len([a for a in realizadas if a.get("deal_id") is None]),
+        }
+    })
+    
 @app.route("/")
 def index():
     return redirect("/login")
