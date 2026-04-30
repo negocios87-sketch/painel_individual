@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login – Board Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #111; --border: #222;
+    --yellow: #f5c400; --white: #f0f0f0; --muted: #555; --red: #ff4c4c;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: radial-gradient(ellipse at 50% 0%, #f5c40010 0%, transparent 60%);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 32px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+    text-align: center;
+    line-height: 1;
+  }
+  .logo span {
+    display: block;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+  .form { display: flex; flex-direction: column; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+  input {
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--yellow); }
+  button {
+    background: var(--yellow);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    padding: 14px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 4px;
+  }
+  button:hover { opacity: 0.85; }
+  .erro {
+    display: none;
+    background: #ff4c4c22;
+    border: 1px solid var(--red);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red);
+    text-align: center;
+  }
+  .erro.show { display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    BOARD<br>ACADEMY
+    <span>Inteligência Comercial</span>
+  </div>
+
+  <form class="form" id="formLogin">
+    <div class="field">
+      <label>Usuário</label>
+      <input type="text" id="usuario" placeholder="Seu nome completo" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="erro" id="erroMsg">Usuário ou senha incorretos</div>
+    <button type="submit">ENTRAR</button>
+  </form>
+</div>
+
+<script>
+document.getElementById('formLogin').addEventListener('submit', async e => {
+  e.preventDefault();
+  const usuario = document.getElementById('usuario').value.trim();
+  const senha   = document.getElementById('senha').value.trim();
+  const erro    = document.getElementById('erroMsg');
+  erro.classList.remove('show');
+
+  const form = new FormData();
+  form.append('usuario', usuario);
+  form.append('senha', senha);
+
+  const resp = await fetch('/login', { method: 'POST', body: form });
+  if (resp.ok || resp.redirected) {
+    window.location.href = '/dashboard';
+  } else {
+    erro.classList.add('show');
+  }
+});
+
+// Enter no campo senha
+document.getElementById('senha').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('formLogin').dispatchEvent(new Event('submit'));
+});
+</script>
+</body>
+</html>

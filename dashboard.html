@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard SDR – Board Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+    --border: #222; --yellow: #f5c400; --yellow-dim: #f5c40022;
+    --white: #f0f0f0; --muted: #555; --green: #2adf8a; --red: #ff4c4c;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--white); font-family:var(--font-body); min-height:100vh; padding:24px; background-image:radial-gradient(ellipse at 80% 0%,#f5c40008 0%,transparent 60%); }
+
+  /* LOADING */
+  #loading { display:flex; flex-direction:column; align-items:center; justify-content:center; height:80vh; gap:16px; }
+  .spinner { width:48px; height:48px; border:3px solid var(--border); border-top-color:var(--yellow); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-txt { font-family:var(--font-mono); font-size:12px; color:var(--muted); letter-spacing:2px; }
+
+  #dashboard { display:none; }
+
+  /* HEADER */
+  .header { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:20px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--border); }
+  .avatar { width:72px; height:72px; border-radius:50%; background:var(--surface2); border:2px solid var(--yellow); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; color:var(--yellow); overflow:hidden; flex-shrink:0; cursor:pointer; position:relative; }
+  .avatar img { width:100%; height:100%; object-fit:cover; }
+  .avatar-hint { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); font-size:8px; text-align:center; padding:2px; color:#aaa; opacity:0; transition:opacity 0.2s; }
+  .avatar:hover .avatar-hint { opacity:1; }
+  #fotoInput { display:none; }
+  .user-name { font-family:var(--font-display); font-size:28px; letter-spacing:1px; color:var(--white); line-height:1; }
+  .user-cargo { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-top:4px; }
+  .metas-row { display:flex; gap:8px; margin-top:6px; }
+  .meta-tag { font-family:var(--font-mono); font-size:11px; padding:3px 10px; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .meta-tag span { color:var(--yellow); font-weight:500; }
+  .gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .gauge-svg { width:180px; height:100px; }
+  .gauge-label { font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .gauge-value { font-family:var(--font-display); font-size:26px; color:var(--yellow); text-align:center; }
+  .logo-box { border:1px solid var(--border); padding:10px 20px; border-radius:6px; font-family:var(--font-display); font-size:20px; letter-spacing:3px; color:var(--yellow); background:var(--surface); text-align:center; }
+
+  /* COMISSÃO BADGE */
+  .comissao-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; padding:14px 18px; background:var(--surface); border:1px solid var(--border); border-radius:8px; }
+  .comissao-badge { font-family:var(--font-mono); font-size:11px; padding:4px 12px; border-radius:4px; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
+  .comissao-badge.on  { background:#2adf8a22; color:var(--green); border:1px solid var(--green); }
+  .comissao-badge.off { background:#ff4c4c22; color:var(--red);   border:1px solid var(--red); }
+  .comissao-info { font-size:13px; color:var(--muted); }
+  .comissao-info span { color:var(--white); font-weight:600; }
+  .comissao-proj { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); text-align:right; }
+  .comissao-proj strong { display:block; font-size:16px; color:var(--green); }
+
+  /* KPI GRID */
+  .kpi-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-bottom:28px; }
+  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 12px; display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden; transition:border-color 0.2s; animation:fadeUp 0.4s ease both; }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--yellow); opacity:0; transition:opacity 0.2s; }
+  .kpi-card:hover { border-color:var(--yellow); }
+  .kpi-card:hover::before { opacity:1; }
+  .kpi-label { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); line-height:1.3; }
+  .kpi-value { font-family:var(--font-display); font-size:30px; color:var(--white); line-height:1; }
+  .kpi-value.yellow { color:var(--yellow); }
+  .kpi-value.green  { color:var(--green); }
+  .kpi-value.red    { color:var(--red); }
+  .kpi-sub { font-family:var(--font-mono); font-size:10px; color:var(--muted); }
+
+  /* CHARTS */
+  .charts-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:28px; }
+  .chart-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; animation:fadeUp 0.4s ease both; }
+  .chart-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:14px; }
+  .chart-canvas-wrap { height:150px; position:relative; }
+
+  /* TABLES */
+  .tables-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .table-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; overflow:hidden; animation:fadeUp 0.4s ease both; }
+  .table-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:14px; }
+  .data-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .data-table th { text-align:left; color:var(--muted); font-family:var(--font-mono); font-size:10px; font-weight:400; letter-spacing:1px; padding-bottom:8px; border-bottom:1px solid var(--border); text-transform:uppercase; }
+  .data-table td { padding:9px 0; border-bottom:1px solid #1a1a1a; color:var(--white); font-size:12px; vertical-align:middle; }
+  .data-table tr:last-child td { border-bottom:none; }
+  .data-table td.mono  { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .data-table td.money { font-family:var(--font-mono); color:var(--green); font-size:11px; }
+  .empty-row { font-family:var(--font-mono); font-size:11px; color:var(--muted); padding:12px 0; }
+  .badge { display:inline-block; font-size:9px; font-family:var(--font-mono); padding:2px 6px; border-radius:3px; text-transform:uppercase; letter-spacing:0.5px; }
+  .badge.red { background:#ff4c4c22; color:var(--red); }
+
+  /* FOOTER */
+  .footer { display:flex; justify-content:space-between; align-items:center; margin-top:28px; padding-top:16px; border-top:1px solid var(--border); }
+  .footer-label { font-size:10px; text-transform:uppercase; letter-spacing:3px; color:var(--muted); }
+  .footer-date  { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-txt">Carregando dados...</div>
+</div>
+
+<div id="dashboard">
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="avatar" id="avatarEl">
+      <span id="avatarInitials">--</span>
+    </div>
+  </div>
+  <div>
+    <div class="user-name" id="userName">--</div>
+    <div class="user-cargo" id="userCargo">--</div>
+    <div class="metas-row">
+      <div class="meta-tag">Meta Reunião <span id="metaReu">--</span></div>
+      <div class="meta-tag">Meta Financeira <span id="metaFin">--</span></div>
+    </div>
+  </div>
+  <div class="gauge-wrap">
+    <svg class="gauge-svg" viewBox="0 0 180 100">
+      <defs>
+        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#f5c400" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#f5c400"/>
+        </linearGradient>
+      </defs>
+      <path d="M 10 95 A 80 80 0 0 1 170 95" fill="none" stroke="#222" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 10 95 A 80 80 0 0 1 170 95" fill="none" stroke="url(#gaugeGrad)" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="251" id="gaugeArc" stroke-dashoffset="251"/>
+    </svg>
+    <div class="gauge-value" id="gaugeVal">0%</div>
+    <div class="gauge-label">Atingimento Geral</div>
+  </div>
+  <div class="logo-box">BOARD<br>ACADEMY</div>
+</div>
+
+<!-- COMISSÃO -->
+<div class="comissao-bar">
+  <span class="comissao-badge" id="comissaoBadge">--</span>
+  <div class="comissao-info">
+    Atingimento: <span id="comAtingimento">--</span> &nbsp;·&nbsp;
+    Acelerador: <span id="comAcelerador">--</span> &nbsp;·&nbsp;
+    Comissão estimada: <span id="comEstimada">--</span>
+  </div>
+  <div class="comissao-proj">
+    Projeção fim do mês
+    <strong id="comProjecao">--</strong>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Reuniões Agendadas</div>
+    <div class="kpi-value" id="kpiAgendadas">--</div>
+    <div class="kpi-sub">mês atual</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Reuniões Realizadas</div>
+    <div class="kpi-value" id="kpiRealizadas">--</div>
+    <div class="kpi-sub" id="kpiRealizadasSub">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">% Meta Reunião</div>
+    <div class="kpi-value yellow" id="kpiPctReu">--</div>
+    <div class="kpi-sub" id="kpiPctReuSub">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">R$ Ganhos</div>
+    <div class="kpi-value green" id="kpiValorBruto">--</div>
+    <div class="kpi-sub">valor bruto</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">R$ Ganhos Multiplicador</div>
+    <div class="kpi-value green" id="kpiValorMulti">--</div>
+    <div class="kpi-sub">com multiplicador</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">% Meta Financeira</div>
+    <div class="kpi-value yellow" id="kpiPctFin">--</div>
+    <div class="kpi-sub" id="kpiPctFinSub">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">% Desqualificação</div>
+    <div class="kpi-value red" id="kpiDesq">--</div>
+    <div class="kpi-sub">das reuniões</div>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">Reuniões Agendadas</div>
+    <div class="chart-canvas-wrap"><canvas id="chartAgendadas"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Reuniões Realizadas</div>
+    <div class="chart-canvas-wrap"><canvas id="chartRealizadas"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Valores Ganhos (R$)</div>
+    <div class="chart-canvas-wrap"><canvas id="chartValores"></canvas></div>
+  </div>
+</div>
+
+<!-- TABLES -->
+<div class="tables-row">
+  <div class="table-card">
+    <div class="table-title">Próximas Reuniões</div>
+    <table class="data-table">
+      <thead><tr><th>Deal ID</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
+      <tbody id="tblProximas"></tbody>
+    </table>
+  </div>
+  <div class="table-card">
+    <div class="table-title">Reuniões Ganhas</div>
+    <table class="data-table">
+      <thead><tr><th>ID</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
+      <tbody id="tblGanhas"></tbody>
+    </table>
+  </div>
+  <div class="table-card">
+    <div class="table-title">Reuniões Desqualificadas</div>
+    <table class="data-table">
+      <thead><tr><th>Deal ID</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
+      <tbody id="tblDesq"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-label">Inteligência Comercial · Board Academy</div>
+  <a href="/logout" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-decoration:none;letter-spacing:2px;text-transform:uppercase;">Sair →</a>
+  <div class="footer-date" id="footerDate">--</div>
+</div>
+
+</div><!-- /dashboard -->
+
+<script>
+Chart.register(ChartDataLabels);
+
+// ── CONFIG ──────────────────────────────────────────────────
+const NOME = null;
+const API_URL       = 'http://localhost:5050/api/sdr';
+const REFRESH_MS    = 5 * 60 * 1000; // 5 minutos
+
+let chartAg = null, chartRe = null, chartVa = null;
+
+// ── FOTO ────────────────────────────────────────────────────
+function trocarFoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const el = document.getElementById('avatarEl');
+    el.innerHTML = `<img src="${ev.target.result}"><div class="avatar-hint">Trocar foto</div>`;
+    localStorage.setItem('foto_' + NOME, ev.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function carregarFoto(fotoUrl) {
+  if (fotoUrl) {
+    document.getElementById('avatarEl').innerHTML = `<img src="${fotoUrl}">`;
+  }
+}
+
+// ── FORMATAÇÃO ──────────────────────────────────────────────
+const fmtMoney = v => {
+  if (v >= 1000000) return 'R$ ' + (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000)    return 'R$ ' + (v/1000).toFixed(1).replace('.0','') + 'K';
+  return 'R$ ' + v.toFixed(0);
+};
+const fmtPct  = v => v.toFixed(1) + '%';
+const fmtDate = s => s ? s.substring(0,10).split('-').reverse().join('/') : '--';
+
+// ── GAUGE ───────────────────────────────────────────────────
+function atualizarGauge(pct) {
+  const total = 251;
+  const fill  = Math.min(pct / 100, 1) * total;
+  document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', total - fill);
+  document.getElementById('gaugeVal').textContent = fmtPct(pct);
+}
+
+// ── CHARTS ──────────────────────────────────────────────────
+const commonOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1, titleColor:'#f5c400', bodyColor:'#aaa', titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'DM Mono',size:11} },
+    datalabels: { color:'#888', font:{family:'DM Mono',size:10}, anchor:'end', align:'top', offset:2, formatter: v => v === 0 ? '' : v }
+  },
+  scales: {
+    x: { grid:{color:'#1a1a1a'}, ticks:{color:'#444',font:{family:'DM Mono',size:10}} },
+    y: { grid:{color:'#1a1a1a'}, ticks:{color:'#444',font:{family:'DM Mono',size:10}}, beginAtZero:true }
+  }
+};
+
+function buildChart(id, type, labels, data, color, isMoney=false) {
+  const ctx = document.getElementById(id);
+  const opts = JSON.parse(JSON.stringify(commonOpts));
+
+  if (isMoney) {
+    opts.plugins.datalabels.formatter = v => v === 0 ? '' : (v/1000).toFixed(1).replace('.0','') + 'K';
+    opts.scales.y.ticks.callback = v => 'R$' + (v/1000).toFixed(0) + 'k';
+  }
+
+  const dataset = type === 'bar'
+    ? { data, backgroundColor: color + '44', borderColor: color, borderWidth:1, borderRadius:3 }
+    : { data, borderColor: color, backgroundColor: color + '11', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor: color };
+
+  return new Chart(ctx, { type, data:{ labels, datasets:[dataset] }, options: opts });
+}
+
+function atualizarCharts(graficos) {
+  const agLabels = graficos.serieAgendadas.map(x => x.data.substring(5).replace('-','/'));
+  const agData   = graficos.serieAgendadas.map(x => x.qtd);
+  const reLabels = graficos.serieRealizadas.map(x => x.data.substring(5).replace('-','/'));
+  const reData   = graficos.serieRealizadas.map(x => x.qtd);
+  const vaLabels = graficos.serieValores.map(x => x.data.substring(5).replace('-','/'));
+  const vaData   = graficos.serieValores.map(x => x.valor);
+
+  if (chartAg) chartAg.destroy();
+  if (chartRe) chartRe.destroy();
+  if (chartVa) chartVa.destroy();
+
+  chartAg = buildChart('chartAgendadas', 'line', agLabels, agData, '#f5c400');
+  chartRe = buildChart('chartRealizadas', 'line', reLabels, reData, '#2adf8a');
+  chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
+}
+
+// ── TABELAS ─────────────────────────────────────────────────
+function renderTabela(tbodyId, rows) {
+  const el = document.getElementById(tbodyId);
+  if (!rows || rows.length === 0) {
+    el.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+    return;
+  }
+  el.innerHTML = rows;
+}
+
+// ── RENDER PRINCIPAL ────────────────────────────────────────
+function render(d) {
+  // Header
+  const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
+  document.getElementById('avatarInitials').textContent = iniciais;
+  document.getElementById('userName').textContent  = d.colaborador.nome;
+  document.getElementById('userCargo').textContent = `${d.colaborador.cargo} · ${d.colaborador.time}`;
+  document.getElementById('metaReu').textContent   = d.metas.meta_reu;
+  document.getElementById('metaFin').textContent   = fmtMoney(d.metas.meta_fin);
+
+  // Gauge: atingimento geral
+  atualizarGauge(d.comissao.atingimento);
+
+  // Comissão
+  const badge = document.getElementById('comissaoBadge');
+  badge.textContent  = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
+  badge.className    = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
+  document.getElementById('comAtingimento').textContent = fmtPct(d.comissao.atingimento);
+  document.getElementById('comAcelerador').textContent  = 'x' + d.comissao.acelerador;
+  document.getElementById('comEstimada').textContent    = fmtMoney(d.comissao.estimada);
+  document.getElementById('comProjecao').textContent    = fmtMoney(d.comissao.projecao.estimada);
+
+  // KPIs
+  document.getElementById('kpiAgendadas').textContent    = d.kpis.reunioesAgendadas;
+  document.getElementById('kpiRealizadas').textContent   = d.kpis.reunioesRealizadas;
+  document.getElementById('kpiRealizadasSub').textContent = `de ${d.kpis.reunioesAgendadas} agendadas`;
+  document.getElementById('kpiPctReu').textContent       = fmtPct(d.kpis.pctMetaReu);
+  document.getElementById('kpiPctReuSub').textContent    = `meta: ${d.metas.meta_reu}`;
+  document.getElementById('kpiValorBruto').textContent   = fmtMoney(d.kpis.valorBruto);
+  document.getElementById('kpiValorMulti').textContent   = fmtMoney(d.kpis.valorMultiplicador);
+  document.getElementById('kpiPctFin').textContent       = fmtPct(d.kpis.pctMetaFin);
+  document.getElementById('kpiPctFinSub').textContent    = `meta: ${fmtMoney(d.metas.meta_fin)}`;
+  document.getElementById('kpiDesq').textContent         = fmtPct(d.kpis.pctDesqualificacao);
+
+  // Charts
+  atualizarCharts(d.graficos);
+
+  // Tabela Próximas
+  renderTabela('tblProximas', d.tabelas.proximasReunioes.map(r =>
+    `<tr>
+      <td class="mono">#${r.deal_id || '--'}</td>
+      <td>${r.nome || '--'}</td>
+      <td class="mono">${fmtDate(r.data)}</td>
+      <td class="mono">${r.hora || '--'}</td>
+    </tr>`
+  ).join(''));
+
+  // Tabela Ganhas
+  renderTabela('tblGanhas', d.tabelas.reunioesGanhas.map(r =>
+    `<tr>
+      <td class="mono">#${r.deal_id}</td>
+      <td>${r.nome || '--'}</td>
+      <td class="mono">${fmtDate(r.data_ganho)}</td>
+      <td class="money">${fmtMoney(r.valor_bruto)}</td>
+      <td class="money">${fmtMoney(r.valor_multi)}</td>
+    </tr>`
+  ).join(''));
+
+  // Tabela Desq
+  renderTabela('tblDesq', d.tabelas.reunioesDesq.map(r =>
+    `<tr>
+      <td class="mono">#${r.deal_id || '--'}</td>
+      <td>${r.nome || '--'}</td>
+      <td class="mono">${fmtDate(r.data)}</td>
+      <td class="mono">${r.hora || '--'}</td>
+    </tr>`
+  ).join(''));
+
+  // Footer
+  document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
+
+  // Foto salva
+  carregarFoto(d.colaborador.foto);
+
+  // Mostra dashboard
+  document.getElementById('loading').style.display   = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+// ── FETCH ────────────────────────────────────────────────────
+async function fetchDados() {
+  try {
+    const resp = await fetch(API_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.erro) throw new Error(data.erro);
+    render(data);
+  } catch(err) {
+    document.querySelector('.loading-txt').textContent = 'Erro: ' + err.message;
+    console.error(err);
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+fetchDados();
+setInterval(fetchDados, REFRESH_MS);
+</script>
+</body>
+</html>
