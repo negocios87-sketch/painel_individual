@@ -242,6 +242,23 @@ def buscar_activities():
             break
     return todos
 
+
+def buscar_deals_por_ids(deal_ids):
+    """Busca deals individuais pelo ID para montar o mapa_rv."""
+    mapa = {}
+    for deal_id in set(deal_ids):
+        if not deal_id:
+            continue
+        try:
+            resp = req.get(f"{BASE_V1}/deals/{deal_id}",
+                params={"api_token": API_KEY}, timeout=10)
+            if resp.status_code == 200:
+                d = resp.json().get("data") or {}
+                mapa[deal_id] = cf(d, CF_REUNIAO_VALID)
+        except:
+            pass
+    return mapa
+
 def cf(deal, key):
     val = deal.get(key)
     if val is None:
@@ -261,8 +278,6 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     valor_bruto = sum(float(d.get("value") or 0) for d in deals_ganhos)
     valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
 
-    mapa_rv = {d["id"]: cf(d, CF_REUNIAO_VALID) for d in deals}
-
     hoje      = date.today()
     mes_atual = hoje.strftime("%Y-%m")
 
@@ -272,16 +287,36 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
         and str(a.get("due_date", ""))[:7] == mes_atual
     ]
 
+    # mapa_rv: busca todos os deals vinculados às activities do SDR
+    # (independente de status — ganho, perdido ou aberto)
+    deal_ids_acts = [a.get("deal_id") for a in acts_sdr if a.get("deal_id")]
+    mapa_rv_ganhos = {d["id"]: cf(d, CF_REUNIAO_VALID) for d in deals}
+    mapa_rv_extra  = buscar_deals_por_ids(
+        [did for did in deal_ids_acts if did not in mapa_rv_ganhos]
+    )
+    mapa_rv = {**mapa_rv_ganhos, **mapa_rv_extra}
+
+    def rv_eh_valida(rv):
+        if rv is None or str(rv).strip() == "":
+            return True
+        s = str(rv)
+        return s == RV_SIM or norm(s) == "sim"
+
+    def rv_eh_desq(rv):
+        if rv is None: return False
+        s = str(rv)
+        return s == RV_NAO or norm(s) == "nao"
+
     def valida(a):
         if not (a.get("done") == True or a.get("status") == "done"):
             return False
         rv = mapa_rv.get(a.get("deal_id"))
-        return rv is None or str(rv).strip() == "" or str(rv) == RV_SIM
+        return rv_eh_valida(rv)
 
     reu_realizadas = [a for a in acts_sdr if valida(a)]
     reu_desq       = [a for a in acts_sdr
                       if (a.get("done") == True or a.get("status") == "done")
-                      and str(mapa_rv.get(a.get("deal_id"), "")) == RV_NAO]
+                      and rv_eh_desq(mapa_rv.get(a.get("deal_id")))]
 
     qtd_agendadas  = len(acts_sdr)
     qtd_realizadas = len(reu_realizadas)
@@ -425,39 +460,7 @@ def api_sdr():
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
-        
-@app.route("/debug/atividades")
-def debug_atividades():
-    if "nome" not in session:
-        return jsonify({"erro": "não autenticado"}), 401
-    nome = "Guilherme Oliveira"
-    users = buscar_users()
-    user_id = encontrar_user_id(users, nome)
-    activities = buscar_activities()
-    hoje = date.today()
-    mes_atual = hoje.strftime("%Y-%m")
-    acts_sdr = [a for a in activities
-                if str(a.get("owner_id")) == str(user_id)
-                and str(a.get("due_date", ""))[:7] == mes_atual]
-    deals = buscar_deals()
-    mapa_rv = {d["id"]: cf(d, CF_REUNIAO_VALID) for d in deals}
-    realizadas = [a for a in acts_sdr
-                  if (a.get("done") == True or a.get("status") == "done")]
-    return jsonify({
-        "total_acts_sdr": len(acts_sdr),
-        "total_realizadas": len(realizadas),
-        "por_rv": {
-            "none_ou_vazio": len([a for a in realizadas if mapa_rv.get(a.get("deal_id")) is None or str(mapa_rv.get(a.get("deal_id"),"")).strip() == ""]),
-            "sim_411": len([a for a in realizadas if str(mapa_rv.get(a.get("deal_id"),"")) == "411"]),
-            "sim_texto": len([a for a in realizadas if norm(str(mapa_rv.get(a.get("deal_id"),"") or "")) == "sim"]),
-            "nao_412": len([a for a in realizadas if str(mapa_rv.get(a.get("deal_id"),"")) == "412"]),
-            "nao_texto": len([a for a in realizadas if norm(str(mapa_rv.get(a.get("deal_id"),"") or "")) == "nao"]),
-            "no_show": len([a for a in realizadas if str(mapa_rv.get(a.get("deal_id"),"")) == "481"]),
-            "no_show_texto": len([a for a in realizadas if norm(str(mapa_rv.get(a.get("deal_id"),"") or "")) == "no show"]),
-            "deal_id_none": len([a for a in realizadas if a.get("deal_id") is None]),
-        }
-    })
-    
+
 @app.route("/")
 def index():
     return redirect("/login")
