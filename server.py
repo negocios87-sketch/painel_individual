@@ -32,6 +32,7 @@ URL_USERS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1p
 
 FILTER_DEALS      = 74674
 FILTER_ACTIVITIES = 1310451
+FILTER_DEALS_RV   = 1431880
 
 CF_MULTIPLICADOR = "7e0e43c2734751f77be292a72527f638a850ad50"
 CF_QUALIFICADOR  = "a6f13cc27c8d041f3af4091283ce0d4fe0913875"
@@ -243,6 +244,33 @@ def buscar_activities():
     return todos
 
 
+def buscar_deals_rv():
+    """Busca todos os deals com Reunião Validada? != Não e != No Show."""
+    deal_ids_validos = set()
+    mapa_owner = {}
+    start = 0
+    while True:
+        resp = req.get(f"{BASE_V1}/deals", params={
+            "filter_id": FILTER_DEALS_RV,
+            "status": "all_not_deleted",
+            "limit": 500,
+            "start": start,
+            "api_token": API_KEY,
+        }, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        lote = data.get("data") or []
+        for d in lote:
+            did = d["id"]
+            uid = d.get("user_id")
+            deal_ids_validos.add(did)
+            mapa_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
+        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
+        if not mais or not lote:
+            break
+        start += 500
+    return deal_ids_validos, mapa_owner
+
 def buscar_deals_por_ids(deal_ids):
     """Busca deals individuais pelo ID para montar o mapa_rv."""
     mapa = {}
@@ -289,21 +317,14 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
 
     # mapa_rv: busca todos os deals vinculados às activities do SDR
     # (independente de status — ganho, perdido ou aberto)
-    deal_ids_acts = [a.get("deal_id") for a in acts_sdr if a.get("deal_id")]
-    mapa_rv_ganhos = {d["id"]: cf(d, CF_REUNIAO_VALID) for d in deals}
-    mapa_rv_extra  = buscar_deals_por_ids(
-        [did for did in deal_ids_acts if did not in mapa_rv_ganhos]
-    )
-    mapa_rv = {**mapa_rv_ganhos, **mapa_rv_extra}
-
-    # Mapa deal_id -> owner_id do deal (para validar que SDR não agendou pra si mesmo)
-    mapa_deal_owner = {}
+    # Busca deals válidos (Reunião Validada? != Não e != No Show)
+    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+    # Completa mapa_owner com deals ganhos do mês
     for d in deals:
-        uid = d.get("user_id")
-        if isinstance(uid, dict):
-            mapa_deal_owner[d["id"]] = uid.get("id")
-        else:
-            mapa_deal_owner[d["id"]] = uid
+        did = d["id"]
+        if did not in mapa_deal_owner:
+            uid = d.get("user_id")
+            mapa_deal_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
 
     def rv_eh_valida(rv):
         if rv is None or str(rv).strip() == "":
@@ -319,13 +340,16 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     def valida(a):
         if not (a.get("done") == True or a.get("status") == "done"):
             return False
-        # SDR não pode ter agendado para si mesmo (owner do deal != responsável da activity)
         deal_id = a.get("deal_id")
-        deal_owner = mapa_deal_owner.get(deal_id)
-        if deal_owner and str(deal_owner) == str(user_id):
+        # SDR não pode agendar reunião para si mesmo
+        act_owner  = str(a.get("owner_id", ""))
+        deal_owner = str(mapa_deal_owner.get(deal_id, "")) if deal_id else ""
+        if act_owner and deal_owner and act_owner == deal_owner:
             return False
-        rv = mapa_rv.get(deal_id)
-        return rv_eh_valida(rv)
+        # Deal deve estar no filtro de reuniões válidas
+        if deal_id and deal_id not in deal_ids_validos:
+            return False
+        return True
 
     reu_realizadas = [a for a in acts_sdr if valida(a)]
     reu_desq       = [a for a in acts_sdr
