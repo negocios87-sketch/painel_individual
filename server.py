@@ -502,7 +502,34 @@ def api_sdr():
 @app.route("/")
 def index():
     return redirect("/login")
-
+    
+@app.route("/debug/erro")
+def debug_erro():
+    if "nome" not in session:
+        return jsonify({"erro": "não autenticado"}), 401
+    try:
+        nome = session["nome"]
+        colaborador = buscar_colaborador(nome)
+        metas = buscar_metas(nome)
+        ote = buscar_ote(colaborador["cargo"]) if colaborador else None
+        users = buscar_users()
+        user_id = encontrar_user_id(users, nome)
+        deals = buscar_deals()
+        activities = buscar_activities()
+        deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+        return jsonify({
+            "colaborador": colaborador,
+            "metas": metas,
+            "ote": ote,
+            "user_id": user_id,
+            "total_deals": len(deals),
+            "total_activities": len(activities),
+            "total_deals_rv": len(deal_ids_validos),
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()})
+        
 # ── MAIN ─────────────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5050))
