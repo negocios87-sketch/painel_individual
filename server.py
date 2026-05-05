@@ -529,6 +529,17 @@ def debug_erro():
     except Exception as e:
         import traceback
         return jsonify({"erro": str(e), "trace": traceback.format_exc()})
+
+@app.route("/api/sdr")
+def api_sdr():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    try:
+        # ... código existente ...
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
         
 # ── MAIN ─────────────────────────────────────────────────────
 if __name__ == "__main__":
