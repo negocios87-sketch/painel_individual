@@ -38,10 +38,9 @@ CF_MULTIPLICADOR = "7e0e43c2734751f77be292a72527f638a850ad50"
 CF_QUALIFICADOR  = "a6f13cc27c8d041f3af4091283ce0d4fe0913875"
 CF_REUNIAO_VALID = "7299bf170c5deab9b4fd8c2275f55faf51984dea"
 
-# IDs do campo Reunião Validada?
-RV_SIM     = "411"
-RV_NAO     = "412"
-RV_NOSHOW  = "481"
+RV_SIM    = "411"
+RV_NAO    = "412"
+RV_NOSHOW = "481"
 
 TIMES_ESCOPO = ["elite", "sniper", "atlantis", "mgm"]
 
@@ -91,7 +90,6 @@ def ajustar_hora(hora_str):
         return hora_str
 
 def url_foto(nome):
-    """Tenta JPG, JPEG e PNG no GitHub"""
     base = f"{GITHUB_FOTOS}/{nome}"
     for ext in ["jpg", "jpeg", "png", "JPG", "JPEG", "PNG"]:
         url = f"{base}.{ext}"
@@ -243,9 +241,8 @@ def buscar_activities():
             break
     return todos
 
-
 def buscar_deals_rv():
-    """Busca todos os deals com Reunião Validada? != Não e != No Show."""
+    """Busca deals com Reunião Validada? != Não e != No Show."""
     deal_ids_validos = set()
     mapa_owner = {}
     start = 0
@@ -270,22 +267,6 @@ def buscar_deals_rv():
             break
         start += 500
     return deal_ids_validos, mapa_owner
-
-def buscar_deals_por_ids(deal_ids):
-    """Busca deals individuais pelo ID para montar o mapa_rv."""
-    mapa = {}
-    for deal_id in set(deal_ids):
-        if not deal_id:
-            continue
-        try:
-            resp = req.get(f"{BASE_V1}/deals/{deal_id}",
-                params={"api_token": API_KEY}, timeout=10)
-            if resp.status_code == 200:
-                d = resp.json().get("data") or {}
-                mapa[deal_id] = cf(d, CF_REUNIAO_VALID)
-        except:
-            pass
-    return mapa
 
 def cf(deal, key):
     val = deal.get(key)
@@ -315,27 +296,15 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
         and str(a.get("due_date", ""))[:7] == mes_atual
     ]
 
-    # mapa_rv: busca todos os deals vinculados às activities do SDR
-    # (independente de status — ganho, perdido ou aberto)
     # Busca deals válidos (Reunião Validada? != Não e != No Show)
     deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+
     # Completa mapa_owner com deals ganhos do mês
     for d in deals:
         did = d["id"]
         if did not in mapa_deal_owner:
             uid = d.get("user_id")
             mapa_deal_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
-
-    def rv_eh_valida(rv):
-        if rv is None or str(rv).strip() == "":
-            return True
-        s = str(rv)
-        return s == RV_SIM or norm(s) == "sim"
-
-    def rv_eh_desq(rv):
-        if rv is None: return False
-        s = str(rv)
-        return s == RV_NAO or norm(s) == "nao"
 
     def valida(a):
         if not (a.get("done") == True or a.get("status") == "done"):
@@ -351,10 +320,16 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
             return False
         return True
 
+    def eh_desq(a):
+        if not (a.get("done") == True or a.get("status") == "done"):
+            return False
+        deal_id = a.get("deal_id")
+        if not deal_id:
+            return False
+        return deal_id not in deal_ids_validos
+
     reu_realizadas = [a for a in acts_sdr if valida(a)]
-    reu_desq       = [a for a in acts_sdr
-                      if (a.get("done") == True or a.get("status") == "done")
-                      and rv_eh_desq(mapa_rv.get(a.get("deal_id")))]
+    reu_desq       = [a for a in acts_sdr if eh_desq(a)]
 
     qtd_agendadas  = len(acts_sdr)
     qtd_realizadas = len(reu_realizadas)
@@ -434,7 +409,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
             "proximasReunioes": [{"deal_id": a.get("deal_id"), "nome": a.get("subject", ""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in proximas],
             "reunioesGanhas":   [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time", ""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0)} for d in deals_ganhos[:10]],
             "reunioesDesq": [{
-                "deal_id":     a.get("deal_id"),
+                "deal_id":      a.get("deal_id"),
                 "proprietario": next((d.get("owner_name") or (d.get("user_id") or {}).get("name","") for d in deals if d["id"] == a.get("deal_id")), "--")
             } for a in reu_desq[:10]],
         },
@@ -469,7 +444,6 @@ def dashboard():
 def api_sdr():
     if "nome" not in session:
         return jsonify({"erro": "Não autenticado"}), 401
-
     nome = session["nome"]
     try:
         colaborador = buscar_colaborador(nome)
@@ -497,12 +471,13 @@ def api_sdr():
         return jsonify(resultado)
 
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
 
 @app.route("/")
 def index():
     return redirect("/login")
-    
+
 @app.route("/debug/erro")
 def debug_erro():
     if "nome" not in session:
@@ -530,17 +505,6 @@ def debug_erro():
         import traceback
         return jsonify({"erro": str(e), "trace": traceback.format_exc()})
 
-@app.route("/api/sdr")
-def api_sdr():
-    if "nome" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
-    nome = session["nome"]
-    try:
-        # ... código existente ...
-    except Exception as e:
-        import traceback
-        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
-        
 # ── MAIN ─────────────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5050))
