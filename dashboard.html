@@ -64,6 +64,13 @@ function renderComissao() {
     const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
     const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
 
+    const comissaoCol = elegivel
+      ? `<th style="color:var(--yellow)">Comissão</th>`
+      : `<th style="color:var(--red)">Comissão</th>`;
+    const comissaoVal = elegivel
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
+
     const metricas = `
       <table class="com-table">
         <thead>
@@ -76,6 +83,7 @@ function renderComissao() {
             <th>Acelerador</th>
             <th>Variável OTE</th>
             <th>Rampagem</th>
+            ${comissaoCol}
           </tr>
         </thead>
         <tbody>
@@ -88,13 +96,12 @@ function renderComissao() {
             <td>${r.acelerador || '--'}</td>
             <td>${fmtMoneyC(r.variavel_ote)}</td>
             <td>${r.rampagem || '--'}</td>
+            ${comissaoVal}
           </tr>
         </tbody>
       </table>`;
 
-    const comissaoHtml = elegivel
-      ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
-      : `<div class="nao-elegivel-msg">❌ Abaixo do mínimo — Atingimento de ${fmtPctC(r.pct_meta_final)} não atingiu o gatilho para comissionamento.</div>`;
+    const comissaoHtml = '';
 
     let acao = '';
     if (elegivel && confirmado) {
@@ -219,6 +226,13 @@ function renderComissao() {
     const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
     const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
 
+    const comissaoCol = elegivel
+      ? `<th style="color:var(--yellow)">Comissão</th>`
+      : `<th style="color:var(--red)">Comissão</th>`;
+    const comissaoVal = elegivel
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
+
     const metricas = `
       <table class="com-table">
         <thead>
@@ -231,6 +245,7 @@ function renderComissao() {
             <th>Acelerador</th>
             <th>Variável OTE</th>
             <th>Rampagem</th>
+            ${comissaoCol}
           </tr>
         </thead>
         <tbody>
@@ -243,13 +258,12 @@ function renderComissao() {
             <td>${r.acelerador || '--'}</td>
             <td>${fmtMoneyC(r.variavel_ote)}</td>
             <td>${r.rampagem || '--'}</td>
+            ${comissaoVal}
           </tr>
         </tbody>
       </table>`;
 
-    const comissaoHtml = elegivel
-      ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
-      : `<div class="nao-elegivel-msg">❌ Abaixo do mínimo — Atingimento de ${fmtPctC(r.pct_meta_final)} não atingiu o gatilho para comissionamento.</div>`;
+    const comissaoHtml = '';
 
     let acao = '';
     if (elegivel && confirmado) {
@@ -927,6 +941,13 @@ function renderComissao() {
     const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
     const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
 
+    const comissaoCol = elegivel
+      ? `<th style="color:var(--yellow)">Comissão</th>`
+      : `<th style="color:var(--red)">Comissão</th>`;
+    const comissaoVal = elegivel
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
+
     const metricas = `
       <table class="com-table">
         <thead>
@@ -939,6 +960,7 @@ function renderComissao() {
             <th>Acelerador</th>
             <th>Variável OTE</th>
             <th>Rampagem</th>
+            ${comissaoCol}
           </tr>
         </thead>
         <tbody>
@@ -951,13 +973,12 @@ function renderComissao() {
             <td>${r.acelerador || '--'}</td>
             <td>${fmtMoneyC(r.variavel_ote)}</td>
             <td>${r.rampagem || '--'}</td>
+            ${comissaoVal}
           </tr>
         </tbody>
       </table>`;
 
-    const comissaoHtml = elegivel
-      ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
-      : `<div class="nao-elegivel-msg">❌ Abaixo do mínimo — Atingimento de ${fmtPctC(r.pct_meta_final)} não atingiu o gatilho para comissionamento.</div>`;
+    const comissaoHtml = '';
 
     let acao = '';
     if (elegivel && confirmado) {
