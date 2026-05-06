@@ -505,7 +505,10 @@ def enviar_notificacao(nome, mes, ano, valor, data_hora):
         mes_nome = nomes_meses[int(mes)] if str(mes).isdigit() else mes
 
         payload = {
-            "text": f"✅ **Confirmação de Comissão**\n\n**Colaborador:** {nome}\n**Período:** {mes_nome} / {ano}\n**Valor:** R$ {valor}\n**Data/Hora:** {data_hora}"
+            "Nome":      nome,
+            "Periodo":   f"{mes_nome} / {ano}",
+            "Valor":     f"R$ {valor}",
+            "DataHora":  data_hora
         }
 
         r = req.post(webhook_url, json=payload, timeout=15)
