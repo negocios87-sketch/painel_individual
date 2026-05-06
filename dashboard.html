@@ -113,14 +113,19 @@ async function confirmarDefinitivo() {
   const r = dadosComissao[pendenteMesIdx];
   document.getElementById('btnOk').disabled = true;
 
-  // Salva confirmação no localStorage do navegador
+  // Salva confirmação no localStorage
   const agora = new Date();
   const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const chave = `confirmacao_${r.ano}_${r.mes}`;
   localStorage.setItem(chave, dataHora);
-
-  // Atualiza o dado local
   dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
+  // Envia e-mail de confirmação
+  await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
+  });
 
   fecharModal();
   document.getElementById('successOverlay').classList.remove('hidden');
@@ -244,14 +249,19 @@ async function confirmarDefinitivo() {
   const r = dadosComissao[pendenteMesIdx];
   document.getElementById('btnOk').disabled = true;
 
-  // Salva confirmação no localStorage do navegador
+  // Salva confirmação no localStorage
   const agora = new Date();
   const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const chave = `confirmacao_${r.ano}_${r.mes}`;
   localStorage.setItem(chave, dataHora);
-
-  // Atualiza o dado local
   dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
+  // Envia e-mail de confirmação
+  await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
+  });
 
   fecharModal();
   document.getElementById('successOverlay').classList.remove('hidden');
@@ -922,14 +932,19 @@ async function confirmarDefinitivo() {
   const r = dadosComissao[pendenteMesIdx];
   document.getElementById('btnOk').disabled = true;
 
-  // Salva confirmação no localStorage do navegador
+  // Salva confirmação no localStorage
   const agora = new Date();
   const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const chave = `confirmacao_${r.ano}_${r.mes}`;
   localStorage.setItem(chave, dataHora);
-
-  // Atualiza o dado local
   dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
+  // Envia e-mail de confirmação
+  await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
+  });
 
   fecharModal();
   document.getElementById('successOverlay').classList.remove('hidden');
