@@ -5,8 +5,252 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard SDR – Board Academy</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+// ── ABAS ────────────────────────────────────────────────────
+function mudarAba(aba, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
+  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
+  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
+}
+
+// ── COMISSÃO ────────────────────────────────────────────────
+const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let comissaoCarregada = false;
+let dadosComissao = [];
+let pendenteMesIdx = null;
+
+const fmtMoneyC = v => {
+  if (!v || v == 0 || isNaN(Number(v))) return 'R$ 0';
+  const n = Number(String(v).replace(',','.'));
+  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
+  return 'R$ ' + n.toFixed(2);
+};
+const fmtPctC = v => v && v !== 'nan' ? v : '--';
+
+async function carregarComissao() {
+  comissaoCarregada = true;
+  try {
+    const resp = await fetch('/api/comissao');
+    const data = await resp.json();
+    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
+    dadosComissao = data.registros;
+    renderComissao();
+  } catch(e) {
+    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
+  }
+}
+
+function renderComissao() {
+  const el = document.getElementById('listaMeses');
+  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+
+  el.innerHTML = dadosComissao.map((r, i) => {
+    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
+    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
+    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
+    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
+
+    const metricas = `
+      <div class="metricas">
+        <div class="metrica"><div class="metrica-label">Vol. Reuniões</div><div class="metrica-valor">${r.vol_reuniao || '--'}</div></div>
+        <div class="metrica"><div class="metrica-label">Valor Financeiro</div><div class="metrica-valor">${fmtMoneyC(r.valor_financeiro)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Reunião</div><div class="metrica-valor yellow">${fmtPctC(r.pct_reuniao)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Financeiro</div><div class="metrica-valor yellow">${fmtPctC(r.pct_financeiro)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Meta Final</div><div class="metrica-valor yellow">${fmtPctC(r.pct_meta_final)}</div></div>
+        <div class="metrica"><div class="metrica-label">Acelerador</div><div class="metrica-valor">${r.acelerador || '--'}</div></div>
+        <div class="metrica"><div class="metrica-label">Variável OTE</div><div class="metrica-valor">${fmtMoneyC(r.variavel_ote)}</div></div>
+        <div class="metrica"><div class="metrica-label">Rampagem</div><div class="metrica-valor">${r.rampagem || '--'}</div></div>
+      </div>`;
+
+    const comissaoHtml = elegivel
+      ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
+      : `<div class="nao-elegivel-msg">❌ Abaixo do mínimo — Atingimento de ${fmtPctC(r.pct_meta_final)} não atingiu o gatilho para comissionamento.</div>`;
+
+    let acao = '';
+    if (elegivel && confirmado) {
+      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
+    } else if (elegivel) {
+      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+    }
+
+    return `<div class="mes-card ${cardClass}">
+      <div class="mes-header">
+        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
+        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
+      </div>
+      ${metricas}${comissaoHtml}${acao}
+    </div>`;
+  }).join('');
+}
+
+function abrirModal(idx) {
+  pendenteMesIdx = idx;
+  const r = dadosComissao[idx];
+  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
+  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
+  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  pendenteMesIdx = null;
+}
+
+async function confirmarDefinitivo() {
+  if (pendenteMesIdx === null) return;
+  const r = dadosComissao[pendenteMesIdx];
+  document.getElementById('btnOk').disabled = true;
+  const resp = await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes })
+  });
+  const data = await resp.json();
+  fecharModal();
+  if (data.ok) {
+    document.getElementById('successOverlay').classList.remove('hidden');
+    setTimeout(() => {
+      document.getElementById('successOverlay').classList.add('hidden');
+      comissaoCarregada = false;
+      carregarComissao();
+    }, 3500);
+  } else {
+    alert('Erro ao confirmar: ' + (data.erro || 'tente novamente'));
+  }
+  document.getElementById('btnOk').disabled = false;
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) fecharModal();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js">
+// ── ABAS ────────────────────────────────────────────────────
+function mudarAba(aba, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
+  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
+  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
+}
+
+// ── COMISSÃO ────────────────────────────────────────────────
+const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let comissaoCarregada = false;
+let dadosComissao = [];
+let pendenteMesIdx = null;
+
+const fmtMoneyC = v => {
+  if (!v || v == 0 || isNaN(Number(v))) return 'R$ 0';
+  const n = Number(String(v).replace(',','.'));
+  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
+  return 'R$ ' + n.toFixed(2);
+};
+const fmtPctC = v => v && v !== 'nan' ? v : '--';
+
+async function carregarComissao() {
+  comissaoCarregada = true;
+  try {
+    const resp = await fetch('/api/comissao');
+    const data = await resp.json();
+    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
+    dadosComissao = data.registros;
+    renderComissao();
+  } catch(e) {
+    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
+  }
+}
+
+function renderComissao() {
+  const el = document.getElementById('listaMeses');
+  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+
+  el.innerHTML = dadosComissao.map((r, i) => {
+    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
+    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
+    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
+    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
+
+    const metricas = `
+      <div class="metricas">
+        <div class="metrica"><div class="metrica-label">Vol. Reuniões</div><div class="metrica-valor">${r.vol_reuniao || '--'}</div></div>
+        <div class="metrica"><div class="metrica-label">Valor Financeiro</div><div class="metrica-valor">${fmtMoneyC(r.valor_financeiro)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Reunião</div><div class="metrica-valor yellow">${fmtPctC(r.pct_reuniao)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Financeiro</div><div class="metrica-valor yellow">${fmtPctC(r.pct_financeiro)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Meta Final</div><div class="metrica-valor yellow">${fmtPctC(r.pct_meta_final)}</div></div>
+        <div class="metrica"><div class="metrica-label">Acelerador</div><div class="metrica-valor">${r.acelerador || '--'}</div></div>
+        <div class="metrica"><div class="metrica-label">Variável OTE</div><div class="metrica-valor">${fmtMoneyC(r.variavel_ote)}</div></div>
+        <div class="metrica"><div class="metrica-label">Rampagem</div><div class="metrica-valor">${r.rampagem || '--'}</div></div>
+      </div>`;
+
+    const comissaoHtml = elegivel
+      ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
+      : `<div class="nao-elegivel-msg">❌ Abaixo do mínimo — Atingimento de ${fmtPctC(r.pct_meta_final)} não atingiu o gatilho para comissionamento.</div>`;
+
+    let acao = '';
+    if (elegivel && confirmado) {
+      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
+    } else if (elegivel) {
+      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+    }
+
+    return `<div class="mes-card ${cardClass}">
+      <div class="mes-header">
+        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
+        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
+      </div>
+      ${metricas}${comissaoHtml}${acao}
+    </div>`;
+  }).join('');
+}
+
+function abrirModal(idx) {
+  pendenteMesIdx = idx;
+  const r = dadosComissao[idx];
+  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
+  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
+  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  pendenteMesIdx = null;
+}
+
+async function confirmarDefinitivo() {
+  if (pendenteMesIdx === null) return;
+  const r = dadosComissao[pendenteMesIdx];
+  document.getElementById('btnOk').disabled = true;
+  const resp = await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes })
+  });
+  const data = await resp.json();
+  fecharModal();
+  if (data.ok) {
+    document.getElementById('successOverlay').classList.remove('hidden');
+    setTimeout(() => {
+      document.getElementById('successOverlay').classList.add('hidden');
+      comissaoCarregada = false;
+      carregarComissao();
+    }, 3500);
+  } else {
+    alert('Erro ao confirmar: ' + (data.erro || 'tente novamente'));
+  }
+  document.getElementById('btnOk').disabled = false;
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) fecharModal();
+});
+</script>
 <style>
   :root {
     --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
@@ -112,6 +356,65 @@
     .charts-row { grid-template-columns:1fr; }
     .tables-row { grid-template-columns:1fr; }
   }
+
+  /* ABAS DE NAVEGAÇÃO */
+  .tabs { display:flex; gap:4px; margin-bottom:24px; border-bottom:1px solid var(--border); }
+  .tab-btn { font-family:var(--font-mono); font-size:11px; padding:10px 20px; border:none; background:transparent; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; letter-spacing:1.5px; text-transform:uppercase; transition:all 0.2s; }
+  .tab-btn:hover { color:var(--white); }
+  .tab-btn.active { color:var(--yellow); border-bottom-color:var(--yellow); }
+
+  /* PÁGINA COMISSÃO */
+  .formula-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px 22px; margin-bottom:24px; }
+  .formula-label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+  .formula { font-family:var(--font-mono); font-size:13px; color:var(--white); }
+  .formula span { color:var(--yellow); }
+  .mes-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:24px; margin-bottom:16px; }
+  .mes-card.confirmado { border-color:#2adf8a44; }
+  .mes-card.nao-elegivel { border-color:#ff4c4c33; }
+  .mes-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .mes-titulo { font-family:var(--font-display); font-size:26px; letter-spacing:1px; color:var(--white); }
+  .mes-nivel { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:4px; letter-spacing:1px; }
+  .badge-elegivel { font-family:var(--font-mono); font-size:10px; padding:3px 10px; border-radius:3px; text-transform:uppercase; letter-spacing:1px; }
+  .badge-elegivel.sim { background:#2adf8a22; color:var(--green); border:1px solid var(--green); }
+  .badge-elegivel.nao { background:#ff4c4c22; color:var(--red); border:1px solid var(--red); }
+  .metricas { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-bottom:18px; }
+  .metrica { background:var(--surface2); border-radius:6px; padding:10px 12px; }
+  .metrica-label { font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
+  .metrica-valor { font-family:var(--font-display); font-size:20px; color:var(--white); }
+  .metrica-valor.yellow { color:var(--yellow); }
+  .metrica-valor.green  { color:var(--green); }
+  .comissao-destaque { background:linear-gradient(135deg,#1a1a0a,#111); border:1px solid var(--yellow); border-radius:8px; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+  .comissao-label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; }
+  .comissao-valor { font-family:var(--font-display); font-size:38px; color:var(--yellow); line-height:1; }
+  .nao-elegivel-msg { background:#ff4c4c11; border:1px solid #ff4c4c33; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--red); }
+  .confirmacao-area { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
+  .btn-confirmar { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:10px 22px; font-family:var(--font-display); font-size:17px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
+  .btn-confirmar:hover { opacity:0.85; }
+  .confirmado-msg { display:flex; align-items:center; gap:8px; }
+  .confirmado-check { color:var(--green); font-size:16px; }
+  .confirmado-txt { font-family:var(--font-mono); font-size:11px; color:var(--green); letter-spacing:1px; }
+  .com-empty { text-align:center; padding:60px 20px; color:var(--muted); font-family:var(--font-mono); font-size:13px; letter-spacing:1px; }
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:999; padding:20px; }
+  .modal-overlay.hidden { display:none; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:32px; max-width:460px; width:100%; animation:fadeUp 0.3s ease; }
+  .modal-title { font-family:var(--font-display); font-size:26px; color:var(--yellow); letter-spacing:1px; margin-bottom:14px; }
+  .modal-body { font-size:14px; color:var(--muted); margin-bottom:8px; }
+  .modal-valor { font-family:var(--font-display); font-size:36px; color:var(--white); margin:14px 0 4px; }
+  .modal-mes { font-family:var(--font-mono); font-size:12px; color:var(--muted); margin-bottom:24px; letter-spacing:1px; }
+  .modal-btns { display:flex; gap:12px; justify-content:flex-end; }
+  .btn-cancelar { background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:10px 18px; font-family:var(--font-body); font-size:14px; cursor:pointer; transition:all 0.2s; }
+  .btn-cancelar:hover { border-color:var(--muted); color:var(--white); }
+  .btn-ok { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:10px 22px; font-family:var(--font-display); font-size:18px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
+  .btn-ok:hover { opacity:0.85; }
+  .btn-ok:disabled { opacity:0.4; cursor:not-allowed; }
+  /* SUCCESS */
+  .success-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.92); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .success-overlay.hidden { display:none; }
+  .success-box { text-align:center; animation:fadeUp 0.4s ease; }
+  .success-icon { font-size:64px; margin-bottom:20px; }
+  .success-title { font-family:var(--font-display); font-size:36px; color:var(--green); letter-spacing:2px; margin-bottom:12px; }
+  .success-msg { font-size:15px; color:var(--muted); max-width:380px; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -168,6 +471,15 @@
     >
   </div>
 </div>
+
+<!-- ABAS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="mudarAba('dashboard', this)">Dashboard</button>
+  <button class="tab-btn" onclick="mudarAba('comissao', this)">Comissão</button>
+</div>
+
+<!-- ABA DASHBOARD -->
+<div id="aba-dashboard">
 
 <!-- COMISSÃO — 4: sem projeção -->
 <div class="comissao-bar">
@@ -258,6 +570,42 @@
       <thead><tr><th>Lead</th><th>Desqualificado por</th></tr></thead>
       <tbody id="tblDesq"></tbody>
     </table>
+  </div>
+</div>
+
+</div><!-- /aba-dashboard -->
+
+<!-- ABA COMISSÃO -->
+<div id="aba-comissao" style="display:none;">
+  <div class="formula-box">
+    <div class="formula-label">Como sua comissão é calculada</div>
+    <div class="formula" style="margin-top:6px;">
+      <span>% Meta Final</span> × <span>Acelerador</span> × <span>Rampagem</span> × <span>Variável OTE</span>
+    </div>
+  </div>
+  <div id="listaMeses"><div class="com-empty">Carregando histórico...</div></div>
+</div>
+
+<!-- MODAL CONFIRMAÇÃO -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Confirmar Comissão</div>
+    <div class="modal-body">Você confirma o recebimento de:</div>
+    <div class="modal-valor" id="modalValor">--</div>
+    <div class="modal-mes" id="modalMes">--</div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-ok" id="btnOk" onclick="confirmarDefinitivo()">Sim, confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-overlay hidden" id="successOverlay">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Comissão Confirmada!</div>
+    <div class="success-msg">Aguarde o e-mail do financeiro para geração da nota.</div>
   </div>
 </div>
 
@@ -450,6 +798,128 @@ async function fetchDados() {
 
 fetchDados();
 setInterval(fetchDados, REFRESH_MS);
+
+// ── ABAS ────────────────────────────────────────────────────
+function mudarAba(aba, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
+  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
+  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
+}
+
+// ── COMISSÃO ────────────────────────────────────────────────
+const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let comissaoCarregada = false;
+let dadosComissao = [];
+let pendenteMesIdx = null;
+
+const fmtMoneyC = v => {
+  if (!v || v == 0 || isNaN(Number(v))) return 'R$ 0';
+  const n = Number(String(v).replace(',','.'));
+  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
+  return 'R$ ' + n.toFixed(2);
+};
+const fmtPctC = v => v && v !== 'nan' ? v : '--';
+
+async function carregarComissao() {
+  comissaoCarregada = true;
+  try {
+    const resp = await fetch('/api/comissao');
+    const data = await resp.json();
+    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
+    dadosComissao = data.registros;
+    renderComissao();
+  } catch(e) {
+    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
+  }
+}
+
+function renderComissao() {
+  const el = document.getElementById('listaMeses');
+  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+
+  el.innerHTML = dadosComissao.map((r, i) => {
+    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
+    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
+    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
+    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
+
+    const metricas = `
+      <div class="metricas">
+        <div class="metrica"><div class="metrica-label">Vol. Reuniões</div><div class="metrica-valor">${r.vol_reuniao || '--'}</div></div>
+        <div class="metrica"><div class="metrica-label">Valor Financeiro</div><div class="metrica-valor">${fmtMoneyC(r.valor_financeiro)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Reunião</div><div class="metrica-valor yellow">${fmtPctC(r.pct_reuniao)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Financeiro</div><div class="metrica-valor yellow">${fmtPctC(r.pct_financeiro)}</div></div>
+        <div class="metrica"><div class="metrica-label">% Meta Final</div><div class="metrica-valor yellow">${fmtPctC(r.pct_meta_final)}</div></div>
+        <div class="metrica"><div class="metrica-label">Acelerador</div><div class="metrica-valor">${r.acelerador || '--'}</div></div>
+        <div class="metrica"><div class="metrica-label">Variável OTE</div><div class="metrica-valor">${fmtMoneyC(r.variavel_ote)}</div></div>
+        <div class="metrica"><div class="metrica-label">Rampagem</div><div class="metrica-valor">${r.rampagem || '--'}</div></div>
+      </div>`;
+
+    const comissaoHtml = elegivel
+      ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
+      : `<div class="nao-elegivel-msg">❌ Abaixo do mínimo — Atingimento de ${fmtPctC(r.pct_meta_final)} não atingiu o gatilho para comissionamento.</div>`;
+
+    let acao = '';
+    if (elegivel && confirmado) {
+      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
+    } else if (elegivel) {
+      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+    }
+
+    return `<div class="mes-card ${cardClass}">
+      <div class="mes-header">
+        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
+        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
+      </div>
+      ${metricas}${comissaoHtml}${acao}
+    </div>`;
+  }).join('');
+}
+
+function abrirModal(idx) {
+  pendenteMesIdx = idx;
+  const r = dadosComissao[idx];
+  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
+  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
+  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  pendenteMesIdx = null;
+}
+
+async function confirmarDefinitivo() {
+  if (pendenteMesIdx === null) return;
+  const r = dadosComissao[pendenteMesIdx];
+  document.getElementById('btnOk').disabled = true;
+  const resp = await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes })
+  });
+  const data = await resp.json();
+  fecharModal();
+  if (data.ok) {
+    document.getElementById('successOverlay').classList.remove('hidden');
+    setTimeout(() => {
+      document.getElementById('successOverlay').classList.add('hidden');
+      comissaoCarregada = false;
+      carregarComissao();
+    }, 3500);
+  } else {
+    alert('Erro ao confirmar: ' + (data.erro || 'tente novamente'));
+  }
+  document.getElementById('btnOk').disabled = false;
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) fecharModal();
+});
 </script>
 </body>
 </html>
