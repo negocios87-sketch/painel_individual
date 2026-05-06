@@ -28,6 +28,8 @@ GITHUB_FOTOS = "https://raw.githubusercontent.com/negocios87-sketch/fotos_time_c
 URL_COLAB = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=1782440078&single=true&output=csv"
 URL_METAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=0&single=true&output=csv"
 URL_OTE   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=569278086&single=true&output=csv"
+
+URL_COMISSOES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=1720844569&single=true&output=csv"
 URL_USERS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=160245570&single=true&output=csv"
 
 FILTER_DEALS      = 1464384
@@ -415,6 +417,83 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
         },
         "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
     }
+
+
+# ── COMISSÃO ────────────────────────────────────────────────
+def buscar_comissoes(nome):
+    df = ler_sheet(URL_COMISSOES)
+    df.columns = [c.strip() for c in df.columns]
+    registros = []
+    for _, row in df.iterrows():
+        if norm(str(row.get("Nome", ""))) != norm(nome):
+            continue
+        registros.append({
+            "ano":            str(row.get("Ano", "")),
+            "mes":            str(row.get("Mês", row.get("Mes", ""))),
+            "nivel":          str(row.get("Nível", row.get("Nivel", ""))),
+            "vol_reuniao":    str(row.get("Vol. Reunião", row.get("Vol. Reuniao", ""))),
+            "valor_financeiro": str(row.get("Valor Financeiro", "")),
+            "pct_reuniao":    str(row.get("% Reunião", row.get("% Reuniao", ""))),
+            "pct_financeiro": str(row.get("% Financeiro", "")),
+            "pct_meta_final": str(row.get("% Meta Final", "")),
+            "elegivel":       str(row.get("Elegível?", row.get("Elegivel?", ""))),
+            "acelerador":     str(row.get("Acelerador OTE", "")),
+            "variavel_ote":   str(row.get("Variável OTE", row.get("Variavel OTE", ""))),
+            "rampagem":       str(row.get("Rampagem (OTE)", "")),
+            "comissao":       str(row.get("Comissão", row.get("Comissao", ""))),
+            "confirmacao":    str(row.get("Confirmação", row.get("Confirmacao", ""))).strip(),
+        })
+    # Ordem: mais recente primeiro
+    registros.sort(key=lambda r: (r["ano"], r["mes"].zfill(2)), reverse=True)
+    return registros
+
+def gravar_confirmacao(nome, ano, mes):
+    import gspread
+    # Fallback: usar requests para atualizar via Sheets API não disponível sem OAuth
+    # Usamos uma abordagem alternativa: webhook para um Google Apps Script
+    # Por ora, retorna erro indicando que precisa configurar o Apps Script
+    return False, "Configure o endpoint de gravação"
+
+@app.route("/comissao")
+def comissao():
+    if "nome" not in session:
+        return redirect("/login")
+    return send_from_directory(".", "comissao.html")
+
+@app.route("/api/comissao")
+def api_comissao():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    try:
+        registros = buscar_comissoes(nome)
+        return jsonify({"nome": nome, "registros": registros})
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
+
+@app.route("/api/comissao/confirmar", methods=["POST"])
+def api_confirmar_comissao():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    body = request.get_json()
+    ano  = body.get("ano")
+    mes  = body.get("mes")
+    agora = (datetime.now() - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
+    # Grava via Google Apps Script webhook
+    webhook_url = os.getenv("SHEETS_WEBHOOK_URL", "")
+    if not webhook_url:
+        return jsonify({"erro": "SHEETS_WEBHOOK_URL não configurada"}), 500
+    try:
+        r = req.post(webhook_url, json={
+            "nome": nome, "ano": ano, "mes": mes, "confirmacao": agora
+        }, timeout=15)
+        if r.status_code == 200:
+            return jsonify({"ok": True})
+        return jsonify({"erro": "Webhook retornou erro", "status": r.status_code}), 500
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
 
 # ── ROTAS ────────────────────────────────────────────────────
 @app.route("/login", methods=["GET", "POST"])
