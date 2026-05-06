@@ -341,7 +341,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
 
     pct_reu = (qtd_realizadas / metas["meta_reu"]) if metas["meta_reu"] > 0 else 0
     pct_fin = (valor_multi / metas["meta_fin"])    if metas["meta_fin"] > 0 else 0
-    ating   = ((pct_reu + pct_fin) / 2) * 100
+    ating   = (pct_reu * 0.7 + pct_fin * 0.3) * 100
 
     acel     = acelerador(ating)
     comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
@@ -352,7 +352,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     proj_reu      = (qtd_realizadas / dp) * du
     pct_proj_fin  = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
     pct_proj_reu  = (proj_reu / metas["meta_reu"] * 100)  if metas["meta_reu"] > 0 else 0
-    ating_proj    = (pct_proj_fin + pct_proj_reu) / 2
+    ating_proj    = (pct_proj_reu * 0.7 + pct_proj_fin * 0.3)
     acel_proj     = acelerador(ating_proj)
     comissao_proj = ote["variavel"] * (ating_proj / 100) * metas["rampagem"] * acel_proj
 
