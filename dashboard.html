@@ -427,7 +427,9 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
     .tables-row { grid-template-columns:1fr 1fr; }
   }
   @media (max-width: 720px) {
-    .header { grid-template-columns:auto 1fr; grid-template-rows:auto auto; }
+    .header { grid-template-columns:1fr; grid-template-rows:auto auto auto; }
+    .header-left { justify-content:center; }
+    .header-right { justify-content:center; }
     .gauge-wrap { grid-column:1/3; }
     .logo-box   { grid-column:1/3; height:70px; }
     .kpi-grid   { grid-template-columns:repeat(2,1fr); }
@@ -512,19 +514,21 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 <!-- HEADER -->
 <div class="header">
-  <div class="avatar" id="avatarEl">
-    <span id="avatarInitials">--</span>
-  </div>
-  <div>
-    <div class="user-name" id="userName">--</div>
-    <div class="user-cargo" id="userCargo">--</div>
-    <div class="metas-row">
-      <div class="meta-tag">Meta Reunião <span id="metaReu">--</span></div>
-      <div class="meta-tag">Meta Financeira <span id="metaFin">--</span></div>
+  <div class="header-left">
+    <div class="avatar" id="avatarEl">
+      <span id="avatarInitials">--</span>
+    </div>
+    <div>
+      <div class="user-name" id="userName">--</div>
+      <div class="user-cargo" id="userCargo">--</div>
+      <div class="metas-row">
+        <div class="meta-tag">Meta Reunião <span id="metaReu">--</span></div>
+        <div class="meta-tag">Meta Financeira <span id="metaFin">--</span></div>
+      </div>
     </div>
   </div>
 
-  <!-- Gauge com % no centro do arco -->
+  <!-- Gauge centralizado -->
   <div class="gauge-wrap">
     <svg class="gauge-svg" viewBox="0 0 260 160">
       <defs>
@@ -546,13 +550,14 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
     </svg>
   </div>
 
-  <!-- 3 - Logo como imagem -->
-  <div class="logo-box">
-    <img
-      src="https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.png"
-      onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.jpg'"
-      alt="Board Academy"
-    >
+  <div class="header-right">
+    <div class="logo-box">
+      <img
+        src="https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.png"
+        onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.jpg'"
+        alt="Board Academy"
+      >
+    </div>
   </div>
 </div>
 
@@ -564,6 +569,9 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 <!-- ABA DASHBOARD -->
 <div id="aba-dashboard">
+
+<!-- MÊS ATUAL -->
+<div style="font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;" id="mesAtual">--</div>
 
 <!-- COMISSÃO — 4: sem projeção -->
 <div class="comissao-bar">
@@ -718,9 +726,10 @@ function carregarFoto(fotoUrl) {
 }
 
 const fmtMoney = v => {
-  if (v >= 1000000) return 'R$ ' + (v/1000000).toFixed(1) + 'M';
-  if (v >= 1000)    return 'R$ ' + (v/1000).toFixed(1).replace('.0','') + 'K';
-  return 'R$ ' + v.toFixed(0);
+  if (!v && v !== 0) return 'R$ 0';
+  const n = Number(v);
+  if (isNaN(n)) return 'R$ 0';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 };
 const fmtPct  = v => v.toFixed(1) + '%';
 // 8 - data em dd/mm
@@ -862,6 +871,11 @@ function render(d) {
 
   document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
   carregarFoto(d.colaborador.foto);
+
+  // Mês atual
+  const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const agora = new Date();
+  document.getElementById('mesAtual').textContent = meses[agora.getMonth()+1] + ' / ' + agora.getFullYear();
 
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
