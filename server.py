@@ -468,7 +468,7 @@ def api_confirmar_comissao():
     mes   = str(body.get("mes", ""))
     valor = str(body.get("valor", ""))
     agora = (datetime.now() - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
-    enviar_email_confirmacao(nome, mes, ano, valor, agora)
+    enviar_notificacao(nome, mes, ano, valor, agora)
     return jsonify({"ok": True})
 
 @app.route("/comissao")
@@ -492,49 +492,33 @@ def api_comissao():
 
 
 
-def enviar_email_confirmacao(nome, mes, ano, valor, data_hora):
-    """Envia e-mail de confirmação de comissão."""
+def enviar_notificacao(nome, mes, ano, valor, data_hora):
+    """Envia notificação via Power Automate webhook."""
     try:
-        sender   = os.getenv("EMAIL_SENDER", "")
-        password = os.getenv("EMAIL_PASSWORD", "")
-        receiver = os.getenv("EMAIL_RECEIVER", "")
-        if not sender or not password or not receiver:
+        webhook_url = os.getenv("POWERAUTOMATE_WEBHOOK", "")
+        if not webhook_url:
+            print("POWERAUTOMATE_WEBHOOK não configurada")
             return False
 
         nomes_meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                        'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-        mes_nome = nomes_meses[int(mes)] if mes.isdigit() else mes
+        mes_nome = nomes_meses[int(mes)] if str(mes).isdigit() else mes
 
-        assunto = f"Confirmação de Comissão - {mes_nome} {ano} - {nome}"
-        corpo = f"""
-        <html><body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;">
-        <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;border:1px solid #ddd;">
-          <h2 style="color:#f5c400;margin-bottom:4px;">✅ Comissão Confirmada</h2>
-          <p style="color:#888;font-size:13px;margin-bottom:24px;">{data_hora}</p>
-          <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="padding:8px 0;color:#666;font-size:13px;">Colaborador</td><td style="padding:8px 0;font-weight:bold;">{nome}</td></tr>
-            <tr><td style="padding:8px 0;color:#666;font-size:13px;">Período</td><td style="padding:8px 0;font-weight:bold;">{mes_nome} / {ano}</td></tr>
-            <tr><td style="padding:8px 0;color:#666;font-size:13px;">Valor</td><td style="padding:8px 0;font-weight:bold;color:#2adf8a;">R$ {valor}</td></tr>
-          </table>
-          <p style="margin-top:24px;font-size:12px;color:#aaa;">Board Academy · Inteligência Comercial</p>
-        </div>
-        </body></html>
-        """
+        payload = {
+            "nome":      nome,
+            "mes":       mes_nome,
+            "ano":       ano,
+            "valor":     valor,
+            "data_hora": data_hora,
+            "titulo":    f"Confirmação de Comissão - {mes_nome} {ano} - {nome}"
+        }
 
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = assunto
-        msg["From"]    = sender
-        msg["To"]      = receiver
-        msg.attach(MIMEText(corpo, "html"))
-
-        with smtplib.SMTP("smtp.office365.com", 587) as server:
-            server.starttls()
-            server.login(sender, password)
-            server.sendmail(sender, receiver, msg.as_string())
-        return True
+        r = req.post(webhook_url, json=payload, timeout=15)
+        print(f"Power Automate status: {r.status_code}")
+        return r.status_code in (200, 201, 202)
     except Exception as e:
         import traceback
-        print(f"ERRO EMAIL: {e}")
+        print(f"ERRO WEBHOOK: {e}")
         traceback.print_exc()
         return False
 
