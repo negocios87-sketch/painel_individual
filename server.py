@@ -472,28 +472,7 @@ def api_comissao():
         import traceback
         return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
 
-@app.route("/api/comissao/confirmar", methods=["POST"])
-def api_confirmar_comissao():
-    if "nome" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
-    nome = session["nome"]
-    body = request.get_json()
-    ano  = body.get("ano")
-    mes  = body.get("mes")
-    agora = (datetime.now() - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
-    # Grava via Google Apps Script webhook
-    webhook_url = os.getenv("SHEETS_WEBHOOK_URL", "")
-    if not webhook_url:
-        return jsonify({"erro": "SHEETS_WEBHOOK_URL não configurada"}), 500
-    try:
-        r = req.post(webhook_url, json={
-            "nome": nome, "ano": ano, "mes": mes, "confirmacao": agora
-        }, timeout=15)
-        if r.status_code == 200:
-            return jsonify({"ok": True})
-        return jsonify({"erro": "Webhook retornou erro", "status": r.status_code}), 500
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+
 
 # ── ROTAS ────────────────────────────────────────────────────
 @app.route("/login", methods=["GET", "POST"])
