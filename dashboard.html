@@ -37,6 +37,14 @@ async function carregarComissao() {
     const data = await resp.json();
     if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
     dadosComissao = data.registros;
+    // Aplica confirmações salvas no localStorage
+    dadosComissao.forEach(r => {
+      const chave = `confirmacao_${r.ano}_${r.mes}`;
+      const salvo = localStorage.getItem(chave);
+      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
+        r.confirmacao = salvo;
+      }
+    });
     renderComissao();
   } catch(e) {
     document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
@@ -104,23 +112,23 @@ async function confirmarDefinitivo() {
   if (pendenteMesIdx === null) return;
   const r = dadosComissao[pendenteMesIdx];
   document.getElementById('btnOk').disabled = true;
-  const resp = await fetch('/api/comissao/confirmar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ano: r.ano, mes: r.mes })
-  });
-  const data = await resp.json();
+
+  // Salva confirmação no localStorage do navegador
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const chave = `confirmacao_${r.ano}_${r.mes}`;
+  localStorage.setItem(chave, dataHora);
+
+  // Atualiza o dado local
+  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
   fecharModal();
-  if (data.ok) {
-    document.getElementById('successOverlay').classList.remove('hidden');
-    setTimeout(() => {
-      document.getElementById('successOverlay').classList.add('hidden');
-      comissaoCarregada = false;
-      carregarComissao();
-    }, 3500);
-  } else {
-    alert('Erro ao confirmar: ' + (data.erro || 'tente novamente'));
-  }
+  document.getElementById('successOverlay').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('successOverlay').classList.add('hidden');
+    renderComissao();
+  }, 3500);
+
   document.getElementById('btnOk').disabled = false;
 }
 
@@ -160,6 +168,14 @@ async function carregarComissao() {
     const data = await resp.json();
     if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
     dadosComissao = data.registros;
+    // Aplica confirmações salvas no localStorage
+    dadosComissao.forEach(r => {
+      const chave = `confirmacao_${r.ano}_${r.mes}`;
+      const salvo = localStorage.getItem(chave);
+      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
+        r.confirmacao = salvo;
+      }
+    });
     renderComissao();
   } catch(e) {
     document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
@@ -227,23 +243,23 @@ async function confirmarDefinitivo() {
   if (pendenteMesIdx === null) return;
   const r = dadosComissao[pendenteMesIdx];
   document.getElementById('btnOk').disabled = true;
-  const resp = await fetch('/api/comissao/confirmar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ano: r.ano, mes: r.mes })
-  });
-  const data = await resp.json();
+
+  // Salva confirmação no localStorage do navegador
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const chave = `confirmacao_${r.ano}_${r.mes}`;
+  localStorage.setItem(chave, dataHora);
+
+  // Atualiza o dado local
+  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
   fecharModal();
-  if (data.ok) {
-    document.getElementById('successOverlay').classList.remove('hidden');
-    setTimeout(() => {
-      document.getElementById('successOverlay').classList.add('hidden');
-      comissaoCarregada = false;
-      carregarComissao();
-    }, 3500);
-  } else {
-    alert('Erro ao confirmar: ' + (data.erro || 'tente novamente'));
-  }
+  document.getElementById('successOverlay').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('successOverlay').classList.add('hidden');
+    renderComissao();
+  }, 3500);
+
   document.getElementById('btnOk').disabled = false;
 }
 
@@ -830,6 +846,14 @@ async function carregarComissao() {
     const data = await resp.json();
     if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
     dadosComissao = data.registros;
+    // Aplica confirmações salvas no localStorage
+    dadosComissao.forEach(r => {
+      const chave = `confirmacao_${r.ano}_${r.mes}`;
+      const salvo = localStorage.getItem(chave);
+      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
+        r.confirmacao = salvo;
+      }
+    });
     renderComissao();
   } catch(e) {
     document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
@@ -897,23 +921,23 @@ async function confirmarDefinitivo() {
   if (pendenteMesIdx === null) return;
   const r = dadosComissao[pendenteMesIdx];
   document.getElementById('btnOk').disabled = true;
-  const resp = await fetch('/api/comissao/confirmar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ano: r.ano, mes: r.mes })
-  });
-  const data = await resp.json();
+
+  // Salva confirmação no localStorage do navegador
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const chave = `confirmacao_${r.ano}_${r.mes}`;
+  localStorage.setItem(chave, dataHora);
+
+  // Atualiza o dado local
+  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
   fecharModal();
-  if (data.ok) {
-    document.getElementById('successOverlay').classList.remove('hidden');
-    setTimeout(() => {
-      document.getElementById('successOverlay').classList.add('hidden');
-      comissaoCarregada = false;
-      carregarComissao();
-    }, 3500);
-  } else {
-    alert('Erro ao confirmar: ' + (data.erro || 'tente novamente'));
-  }
+  document.getElementById('successOverlay').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('successOverlay').classList.add('hidden');
+    renderComissao();
+  }, 3500);
+
   document.getElementById('btnOk').disabled = false;
 }
 
