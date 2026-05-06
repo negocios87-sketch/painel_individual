@@ -22,11 +22,14 @@ let dadosComissao = [];
 let pendenteMesIdx = null;
 
 const fmtMoneyC = v => {
-  if (!v || v == 0 || isNaN(Number(v))) return 'R$ 0';
-  const n = Number(String(v).replace(',','.'));
+  if (!v || v === 'nan') return 'R$ 0';
+  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0';
   if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
   if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
-  return 'R$ ' + n.toFixed(2);
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 };
 const fmtPctC = v => v && v !== 'nan' ? v : '--';
 
@@ -62,16 +65,32 @@ function renderComissao() {
     const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
 
     const metricas = `
-      <div class="metricas">
-        <div class="metrica"><div class="metrica-label">Vol. Reuniões</div><div class="metrica-valor">${r.vol_reuniao || '--'}</div></div>
-        <div class="metrica"><div class="metrica-label">Valor Financeiro</div><div class="metrica-valor">${fmtMoneyC(r.valor_financeiro)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Reunião</div><div class="metrica-valor yellow">${fmtPctC(r.pct_reuniao)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Financeiro</div><div class="metrica-valor yellow">${fmtPctC(r.pct_financeiro)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Meta Final</div><div class="metrica-valor yellow">${fmtPctC(r.pct_meta_final)}</div></div>
-        <div class="metrica"><div class="metrica-label">Acelerador</div><div class="metrica-valor">${r.acelerador || '--'}</div></div>
-        <div class="metrica"><div class="metrica-label">Variável OTE</div><div class="metrica-valor">${fmtMoneyC(r.variavel_ote)}</div></div>
-        <div class="metrica"><div class="metrica-label">Rampagem</div><div class="metrica-valor">${r.rampagem || '--'}</div></div>
-      </div>`;
+      <table class="com-table">
+        <thead>
+          <tr>
+            <th>Vol. Reuniões</th>
+            <th>Valor Financeiro</th>
+            <th>% Reunião</th>
+            <th>% Financeiro</th>
+            <th>% Meta Final</th>
+            <th>Acelerador</th>
+            <th>Variável OTE</th>
+            <th>Rampagem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${r.vol_reuniao || '--'}</td>
+            <td>${fmtMoneyC(r.valor_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
+            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
+            <td>${r.acelerador || '--'}</td>
+            <td>${fmtMoneyC(r.variavel_ote)}</td>
+            <td>${r.rampagem || '--'}</td>
+          </tr>
+        </tbody>
+      </table>`;
 
     const comissaoHtml = elegivel
       ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
@@ -158,11 +177,14 @@ let dadosComissao = [];
 let pendenteMesIdx = null;
 
 const fmtMoneyC = v => {
-  if (!v || v == 0 || isNaN(Number(v))) return 'R$ 0';
-  const n = Number(String(v).replace(',','.'));
+  if (!v || v === 'nan') return 'R$ 0';
+  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0';
   if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
   if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
-  return 'R$ ' + n.toFixed(2);
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 };
 const fmtPctC = v => v && v !== 'nan' ? v : '--';
 
@@ -198,16 +220,32 @@ function renderComissao() {
     const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
 
     const metricas = `
-      <div class="metricas">
-        <div class="metrica"><div class="metrica-label">Vol. Reuniões</div><div class="metrica-valor">${r.vol_reuniao || '--'}</div></div>
-        <div class="metrica"><div class="metrica-label">Valor Financeiro</div><div class="metrica-valor">${fmtMoneyC(r.valor_financeiro)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Reunião</div><div class="metrica-valor yellow">${fmtPctC(r.pct_reuniao)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Financeiro</div><div class="metrica-valor yellow">${fmtPctC(r.pct_financeiro)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Meta Final</div><div class="metrica-valor yellow">${fmtPctC(r.pct_meta_final)}</div></div>
-        <div class="metrica"><div class="metrica-label">Acelerador</div><div class="metrica-valor">${r.acelerador || '--'}</div></div>
-        <div class="metrica"><div class="metrica-label">Variável OTE</div><div class="metrica-valor">${fmtMoneyC(r.variavel_ote)}</div></div>
-        <div class="metrica"><div class="metrica-label">Rampagem</div><div class="metrica-valor">${r.rampagem || '--'}</div></div>
-      </div>`;
+      <table class="com-table">
+        <thead>
+          <tr>
+            <th>Vol. Reuniões</th>
+            <th>Valor Financeiro</th>
+            <th>% Reunião</th>
+            <th>% Financeiro</th>
+            <th>% Meta Final</th>
+            <th>Acelerador</th>
+            <th>Variável OTE</th>
+            <th>Rampagem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${r.vol_reuniao || '--'}</td>
+            <td>${fmtMoneyC(r.valor_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
+            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
+            <td>${r.acelerador || '--'}</td>
+            <td>${fmtMoneyC(r.variavel_ote)}</td>
+            <td>${r.rampagem || '--'}</td>
+          </tr>
+        </tbody>
+      </table>`;
 
     const comissaoHtml = elegivel
       ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
@@ -441,6 +479,12 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
   .success-icon { font-size:64px; margin-bottom:20px; }
   .success-title { font-family:var(--font-display); font-size:36px; color:var(--green); letter-spacing:2px; margin-bottom:12px; }
   .success-msg { font-size:15px; color:var(--muted); max-width:380px; line-height:1.6; }
+
+  /* TABELA COMISSÃO */
+  .com-table { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:13px; }
+  .com-table th { text-align:left; font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; padding:0 12px 10px 0; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .com-table td { padding:12px 12px 4px 0; color:var(--white); font-family:var(--font-mono); font-size:13px; }
+  .com-table td.yellow { color:var(--yellow); }
 </style>
 </head>
 <body>
@@ -841,11 +885,14 @@ let dadosComissao = [];
 let pendenteMesIdx = null;
 
 const fmtMoneyC = v => {
-  if (!v || v == 0 || isNaN(Number(v))) return 'R$ 0';
-  const n = Number(String(v).replace(',','.'));
+  if (!v || v === 'nan') return 'R$ 0';
+  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0';
   if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
   if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
-  return 'R$ ' + n.toFixed(2);
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 };
 const fmtPctC = v => v && v !== 'nan' ? v : '--';
 
@@ -881,16 +928,32 @@ function renderComissao() {
     const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
 
     const metricas = `
-      <div class="metricas">
-        <div class="metrica"><div class="metrica-label">Vol. Reuniões</div><div class="metrica-valor">${r.vol_reuniao || '--'}</div></div>
-        <div class="metrica"><div class="metrica-label">Valor Financeiro</div><div class="metrica-valor">${fmtMoneyC(r.valor_financeiro)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Reunião</div><div class="metrica-valor yellow">${fmtPctC(r.pct_reuniao)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Financeiro</div><div class="metrica-valor yellow">${fmtPctC(r.pct_financeiro)}</div></div>
-        <div class="metrica"><div class="metrica-label">% Meta Final</div><div class="metrica-valor yellow">${fmtPctC(r.pct_meta_final)}</div></div>
-        <div class="metrica"><div class="metrica-label">Acelerador</div><div class="metrica-valor">${r.acelerador || '--'}</div></div>
-        <div class="metrica"><div class="metrica-label">Variável OTE</div><div class="metrica-valor">${fmtMoneyC(r.variavel_ote)}</div></div>
-        <div class="metrica"><div class="metrica-label">Rampagem</div><div class="metrica-valor">${r.rampagem || '--'}</div></div>
-      </div>`;
+      <table class="com-table">
+        <thead>
+          <tr>
+            <th>Vol. Reuniões</th>
+            <th>Valor Financeiro</th>
+            <th>% Reunião</th>
+            <th>% Financeiro</th>
+            <th>% Meta Final</th>
+            <th>Acelerador</th>
+            <th>Variável OTE</th>
+            <th>Rampagem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${r.vol_reuniao || '--'}</td>
+            <td>${fmtMoneyC(r.valor_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
+            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
+            <td>${r.acelerador || '--'}</td>
+            <td>${fmtMoneyC(r.variavel_ote)}</td>
+            <td>${r.rampagem || '--'}</td>
+          </tr>
+        </tbody>
+      </table>`;
 
     const comissaoHtml = elegivel
       ? `<div class="comissao-destaque"><div><div class="comissao-label">Comissão do mês</div><div class="comissao-valor">${fmtMoneyC(r.comissao)}</div></div></div>`
