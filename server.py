@@ -533,7 +533,9 @@ def enviar_email_confirmacao(nome, mes, ano, valor, data_hora):
             server.sendmail(sender, receiver, msg.as_string())
         return True
     except Exception as e:
-        print(f"Erro ao enviar e-mail: {e}")
+        import traceback
+        print(f"ERRO EMAIL: {e}")
+        traceback.print_exc()
         return False
 
 # ── ROTAS ────────────────────────────────────────────────────
