@@ -14,6 +14,9 @@ import os
 import unicodedata
 from datetime import date, datetime, timedelta
 from io import StringIO
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.getenv("SECRET_KEY", "boardacademy2026")
@@ -454,6 +457,20 @@ def gravar_confirmacao(nome, ano, mes):
     # Por ora, retorna erro indicando que precisa configurar o Apps Script
     return False, "Configure o endpoint de gravação"
 
+
+@app.route("/api/comissao/confirmar", methods=["POST"])
+def api_confirmar_comissao():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    body = request.get_json()
+    ano   = str(body.get("ano", ""))
+    mes   = str(body.get("mes", ""))
+    valor = str(body.get("valor", ""))
+    agora = (datetime.now() - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
+    enviar_email_confirmacao(nome, mes, ano, valor, agora)
+    return jsonify({"ok": True})
+
 @app.route("/comissao")
 def comissao():
     if "nome" not in session:
@@ -473,6 +490,51 @@ def api_comissao():
         return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
 
 
+
+
+def enviar_email_confirmacao(nome, mes, ano, valor, data_hora):
+    """Envia e-mail de confirmação de comissão."""
+    try:
+        sender   = os.getenv("EMAIL_SENDER", "")
+        password = os.getenv("EMAIL_PASSWORD", "")
+        receiver = os.getenv("EMAIL_RECEIVER", "")
+        if not sender or not password or not receiver:
+            return False
+
+        nomes_meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+        mes_nome = nomes_meses[int(mes)] if mes.isdigit() else mes
+
+        assunto = f"Confirmação de Comissão - {mes_nome} {ano} - {nome}"
+        corpo = f"""
+        <html><body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;">
+        <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;border:1px solid #ddd;">
+          <h2 style="color:#f5c400;margin-bottom:4px;">✅ Comissão Confirmada</h2>
+          <p style="color:#888;font-size:13px;margin-bottom:24px;">{data_hora}</p>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:8px 0;color:#666;font-size:13px;">Colaborador</td><td style="padding:8px 0;font-weight:bold;">{nome}</td></tr>
+            <tr><td style="padding:8px 0;color:#666;font-size:13px;">Período</td><td style="padding:8px 0;font-weight:bold;">{mes_nome} / {ano}</td></tr>
+            <tr><td style="padding:8px 0;color:#666;font-size:13px;">Valor</td><td style="padding:8px 0;font-weight:bold;color:#2adf8a;">R$ {valor}</td></tr>
+          </table>
+          <p style="margin-top:24px;font-size:12px;color:#aaa;">Board Academy · Inteligência Comercial</p>
+        </div>
+        </body></html>
+        """
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = assunto
+        msg["From"]    = sender
+        msg["To"]      = receiver
+        msg.attach(MIMEText(corpo, "html"))
+
+        with smtplib.SMTP("smtp.office365.com", 587) as server:
+            server.starttls()
+            server.login(sender, password)
+            server.sendmail(sender, receiver, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail: {e}")
+        return False
 
 # ── ROTAS ────────────────────────────────────────────────────
 @app.route("/login", methods=["GET", "POST"])
