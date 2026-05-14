@@ -127,18 +127,55 @@ def buscar_usuario(usuario, senha):
 def buscar_colaborador(nome):
     df = ler_sheet(URL_COLAB)
     df.columns = [c.strip() for c in df.columns]
+    hoje = date.today()
+    ano_atual = hoje.year
+    mes_atual = hoje.month
+
+    # Detecta colunas de referência de mês/ano
+    col_mes_ref = next((c for c in df.columns if "mes" in norm(c) and "ref" in norm(c)), None)
+    col_ano_ref = next((c for c in df.columns if "ano" in norm(c) and "ref" in norm(c)), None)
+
+    melhor = None
     for _, row in df.iterrows():
+        if norm(str(row.get("Nome", ""))) != norm(nome):
+            continue
         subarea = str(row.get("Subarea", ""))
         status  = str(row.get("Status (Euqipe Comercial)", ""))
-        if (norm(str(row.get("Nome", ""))) == norm(nome) and
-            norm(status) == "ativo" and
-            norm(subarea) in TIMES_ESCOPO):
+        if norm(status) != "ativo" or norm(subarea) not in TIMES_ESCOPO:
+            continue
+
+        # Se tem colunas de referência, filtra pelo mês atual
+        if col_mes_ref and col_ano_ref:
+            try:
+                mes_ref = int(float(str(row.get(col_mes_ref, 0))))
+                ano_ref = int(float(str(row.get(col_ano_ref, 0))))
+                if ano_ref == ano_atual and mes_ref == mes_atual:
+                    return {
+                        "nome":  str(row.get("Nome", "")),
+                        "time":  subarea,
+                        "cargo": str(row.get("Cargo", "")),
+                    }
+                # Guarda como fallback caso não encontre o mês exato
+                melhor = {
+                    "nome":  str(row.get("Nome", "")),
+                    "time":  subarea,
+                    "cargo": str(row.get("Cargo", "")),
+                }
+            except:
+                melhor = {
+                    "nome":  str(row.get("Nome", "")),
+                    "time":  subarea,
+                    "cargo": str(row.get("Cargo", "")),
+                }
+        else:
+            # Sem colunas de referência, retorna primeira linha ativa
             return {
                 "nome":  str(row.get("Nome", "")),
                 "time":  subarea,
                 "cargo": str(row.get("Cargo", "")),
             }
-    return None
+
+    return melhor
 
 def buscar_metas(nome):
     df = ler_sheet(URL_METAS)
@@ -471,11 +508,18 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     # Mapa deal_id -> "Reunião Validada?"
     deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
 
+    # Achar user_id do Matheus Paz
+    users_pipe = buscar_users()
+    matheus_id = str(next((uid for uid, uname in users_pipe.items() if norm(uname) == norm("Matheus Paz")), ""))
+
     # Activities do mês onde o closer é owner do DEAL (não da activity)
+    # Ignora: responsável da activity é o próprio closer OU é o Matheus Paz
     acts_closer = [
         a for a in activities
         if str(a.get("due_date", ""))[:7] == mes_atual
         and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
+        and str(a.get("owner_id", "")) != str(user_id)
+        and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
     ]
 
     # Realizadas = done
