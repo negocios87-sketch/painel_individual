@@ -59,7 +59,7 @@ RV_SIM    = "411"
 RV_NAO    = "412"
 RV_NOSHOW = "481"
 
-TIMES_ESCOPO = ["elite", "sniper", "atlantis", "mgm"]
+TIMES_ESCOPO = ["elite", "sniper", "atlantis", "mgm", "orion", "latam", "zenite"]
 
 # ── HELPERS ─────────────────────────────────────────────────
 def norm(s):
@@ -522,13 +522,16 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     users_pipe = buscar_users()
     matheus_id = str(next((uid for uid, uname in users_pipe.items() if norm(uname) == norm("Matheus Paz")), ""))
 
+    # Times Inside Sales — podem agendar para si mesmos
+    TIMES_INSIDE_SALES = ["orion", "latam"]
+    is_inside_sales = norm(colaborador.get("time", "")) in TIMES_INSIDE_SALES
+
     # Activities do mês onde o closer é owner do DEAL (não da activity)
-    # Ignora: responsável da activity é o próprio closer OU é o Matheus Paz
     acts_closer = [
         a for a in activities
         if str(a.get("due_date", ""))[:7] == mes_atual
         and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
-        and str(a.get("owner_id", "")) != str(user_id)
+        and (is_inside_sales or str(a.get("owner_id", "")) != str(user_id))
         and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
     ]
 
