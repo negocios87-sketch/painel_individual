@@ -38,6 +38,8 @@ URL_USERS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1p
 FILTER_DEALS      = 1464384
 FILTER_ACTIVITIES = 1310451
 FILTER_DEALS_RV   = 1466157
+FILTER_REFERIDOS  = 1562285
+TABELA_PRICE_URL  = "https://inspiring-marshmallow-1ba.netlify.app/"
 
 CF_MULTIPLICADOR = "7e0e43c2734751f77be292a72527f638a850ad50"
 CF_QUALIFICADOR  = "a6f13cc27c8d041f3af4091283ce0d4fe0913875"
@@ -422,6 +424,169 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     }
 
 
+
+def is_closer(cargo):
+    """Retorna True se o cargo é Closer."""
+    return "closer" in norm(cargo)
+
+def buscar_referidos():
+    """Busca deals do filtro de referidos (mês atual)."""
+    todos, start = [], 0
+    mes_atual = date.today().strftime("%Y-%m")
+    while True:
+        resp = req.get(f"{BASE_V1}/deals", params={
+            "filter_id": FILTER_REFERIDOS,
+            "limit": 500,
+            "start": start,
+            "api_token": API_KEY
+        }, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        lote = data.get("data") or []
+        for d in lote:
+            add_time = str(d.get("add_time", ""))[:7]
+            if add_time == mes_atual:
+                todos.append(d)
+        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
+        if not mais or not lote:
+            break
+        start += 500
+    return todos
+
+# ── CÁLCULO CLOSER ───────────────────────────────────────────
+def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos):
+    hoje      = date.today()
+    mes_atual = hoje.strftime("%Y-%m")
+
+    # Deals ganhos onde ele é proprietário
+    deals_ganhos = [
+        d for d in deals
+        if d.get("status") == "won"
+        and str((d.get("user_id") or {}).get("id") if isinstance(d.get("user_id"), dict) else d.get("user_id")) == str(user_id)
+    ]
+
+    valor_bruto = sum(float(d.get("value") or 0) for d in deals_ganhos)
+    valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
+
+    # Mapa deal_id -> "Reunião Validada?"
+    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+
+    # Activities do mês onde o closer é owner do DEAL (não da activity)
+    acts_closer = [
+        a for a in activities
+        if str(a.get("due_date", ""))[:7] == mes_atual
+        and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
+    ]
+
+    # Realizadas = done
+    reu_realizadas = [
+        a for a in acts_closer
+        if a.get("done") == True or a.get("status") == "done"
+    ]
+
+    # Validadas = realizadas + Reunião Validada? = Sim
+    reu_validadas = [
+        a for a in reu_realizadas
+        if a.get("deal_id") and a.get("deal_id") in deal_ids_validos
+    ]
+
+    qtd_realizadas = len(reu_realizadas)
+    qtd_validadas  = len(reu_validadas)
+    pct_validadas  = arred(qtd_validadas / qtd_realizadas * 100) if qtd_realizadas else 0
+
+    # Referidos do mês onde ele é proprietário
+    refs_closer = [
+        d for d in referidos
+        if str((d.get("user_id") or {}).get("id") if isinstance(d.get("user_id"), dict) else d.get("user_id")) == str(user_id)
+    ]
+
+    # % Meta financeira
+    pct_fin = (valor_multi / metas["meta_fin"]) if metas["meta_fin"] > 0 else 0
+    ating   = pct_fin * 100
+
+    acel     = acelerador(ating)
+    comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
+
+    # Projeção
+    dp = dias_uteis_passados()
+    du = metas["dias_uteis"]
+    proj_fin     = (valor_multi / dp) * du
+    pct_proj_fin = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
+    acel_proj    = acelerador(pct_proj_fin)
+    comissao_proj = ote["variavel"] * (pct_proj_fin / 100) * metas["rampagem"] * acel_proj
+
+    def serie_acts(lista):
+        mapa = {}
+        for a in lista:
+            dt = str(a.get("due_date", ""))[:10]
+            if dt:
+                mapa[dt] = mapa.get(dt, 0) + 1
+        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
+
+    def serie_deals(lista):
+        mapa = {}
+        for d in lista:
+            dt = str(d.get("won_time", ""))[:10]
+            if dt:
+                v = float(cf(d, CF_MULTIPLICADOR) or 0)
+                mapa[dt] = mapa.get(dt, 0) + v
+        return [{"data": k, "valor": v} for k, v in sorted(mapa.items())]
+
+    def serie_referidos(lista):
+        mapa = {}
+        for d in lista:
+            dt = str(d.get("add_time", ""))[:10]
+            if dt:
+                mapa[dt] = mapa.get(dt, 0) + 1
+        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
+
+    def owner_name(d):
+        uid = d.get("user_id")
+        if isinstance(uid, dict):
+            return uid.get("name", "--")
+        return "--"
+
+    foto = url_foto(nome)
+
+    return {
+        "tipo": "closer",
+        "colaborador": {**colaborador, "foto": foto},
+        "metas": metas,
+        "ote":   ote,
+        "kpis": {
+            "reunioesRealizadas": qtd_realizadas,
+            "reunioesValidadas":  qtd_validadas,
+            "pctValidadas":       pct_validadas,
+            "valorBruto":         arred(valor_bruto),
+            "valorMultiplicador": arred(valor_multi),
+            "pctMetaFin":         arred(pct_fin * 100),
+            "volumeReferidos":    len(refs_closer),
+        },
+        "comissao": {
+            "atingimento":   arred(ating),
+            "acelerador":    acel,
+            "estimada":      arred(comissao),
+            "comissionando": ating >= 60,
+            "projecao": {
+                "valorFin":    arred(proj_fin),
+                "atingimento": arred(pct_proj_fin),
+                "estimada":    arred(comissao_proj),
+            }
+        },
+        "graficos": {
+            "serieRealizadas": serie_acts(reu_realizadas),
+            "serieValores":    serie_deals(deals_ganhos),
+            "serieReferidos":  serie_referidos(refs_closer),
+        },
+        "tabelas": {
+            "reunioesRealizadas": [{"deal_id": a.get("deal_id"), "nome": a.get("subject",""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in reu_realizadas[:10]],
+            "ganhos": [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in deals_ganhos[:10]],
+            "referidos": [{"deal_id": d["id"], "nome": d.get("title"), "data_criacao": str(d.get("add_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in refs_closer[:10]],
+        },
+        "tabela_price_url": TABELA_PRICE_URL,
+        "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+    }
+
 # ── COMISSÃO ────────────────────────────────────────────────
 def buscar_comissoes(nome):
     df = ler_sheet(URL_COMISSOES)
@@ -608,6 +773,53 @@ def debug_erro():
     except Exception as e:
         import traceback
         return jsonify({"erro": str(e), "trace": traceback.format_exc()})
+
+
+@app.route("/api/closer")
+def api_closer():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    try:
+        colaborador = buscar_colaborador(nome)
+        if not colaborador:
+            return jsonify({"erro": f"'{nome}' nao encontrado"}), 404
+
+        metas = buscar_metas(nome)
+        if not metas:
+            return jsonify({"erro": f"Metas nao encontradas para o mes atual"}), 404
+
+        ote = buscar_ote(colaborador["cargo"])
+        if not ote:
+            return jsonify({"erro": f"OTE nao encontrado"}), 404
+
+        users   = buscar_users()
+        user_id = encontrar_user_id(users, nome)
+        if not user_id:
+            return jsonify({"erro": f"Usuario nao encontrado no Pipedrive"}), 404
+
+        deals      = buscar_deals()
+        activities = buscar_activities()
+        referidos  = buscar_referidos()
+
+        resultado = calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos)
+        return jsonify(resultado)
+
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
+
+@app.route("/api/tipo")
+def api_tipo():
+    """Retorna se o usuário logado é SDR ou Closer."""
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    colaborador = buscar_colaborador(nome)
+    if not colaborador:
+        return jsonify({"tipo": "desconhecido"})
+    tipo = "closer" if is_closer(colaborador["cargo"]) else "sdr"
+    return jsonify({"tipo": tipo, "cargo": colaborador["cargo"]})
 
 # ── MAIN ─────────────────────────────────────────────────────
 if __name__ == "__main__":
