@@ -14,6 +14,16 @@ import os
 import unicodedata
 from datetime import date, datetime, timedelta
 from io import StringIO
+import math
+
+def limpar_nans(obj):
+    if isinstance(obj, dict):
+        return {k: limpar_nans(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [limpar_nans(v) for v in obj]
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return 0
+    return obj
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -781,7 +791,7 @@ def api_sdr():
         qualificador_id = buscar_qualificador_id(nome)
 
         resultado = calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities)
-        return jsonify(resultado)
+        return jsonify(limpar_nans(resultado))
 
     except Exception as e:
         import traceback
@@ -847,7 +857,7 @@ def api_closer():
         referidos  = buscar_referidos()
 
         resultado = calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos)
-        return jsonify(resultado)
+        return jsonify(limpar_nans(resultado))
 
     except Exception as e:
         import traceback
