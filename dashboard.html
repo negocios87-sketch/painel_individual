@@ -522,7 +522,7 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
       <div class="user-name" id="userName">--</div>
       <div class="user-cargo" id="userCargo">--</div>
       <div class="metas-row">
-        <div class="meta-tag">Meta Reunião <span id="metaReu">--</span></div>
+        <div class="meta-tag" id="metaReuWrap">Meta Reunião <span id="metaReu">--</span></div>
         <div class="meta-tag">Meta Financeira <span id="metaFin">--</span></div>
       </div>
     </div>
@@ -584,7 +584,7 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 </div>
 
 <!-- KPIs -->
-<div class="kpi-grid">
+<div class="kpi-grid" id="kpiGrid">
   <div class="kpi-card">
     <div class="kpi-label">Reuniões Agendadas</div>
     <div class="kpi-value" id="kpiAgendadas">--</div>
@@ -624,7 +624,7 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 </div>
 
 <!-- CHARTS -->
-<div class="charts-row">
+<div class="charts-row" id="chartsRow">
   <div class="chart-card">
     <div class="chart-title">Reuniões Agendadas</div>
     <div class="chart-canvas-wrap"><canvas id="chartAgendadas"></canvas></div>
@@ -640,7 +640,7 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 </div>
 
 <!-- TABLES -->
-<div class="tables-row">
+<div class="tables-row" id="tablesRow">
   <div class="table-card">
     <div class="table-title">Próximas Reuniões</div>
     <table class="data-table">
@@ -703,7 +703,10 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 <!-- FOOTER -->
 <div class="footer">
-  <div class="footer-label">Inteligência Comercial · Board Academy</div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="footer-label">Inteligência Comercial · Board Academy</div>
+    <a id="tabelaPriceWrap" href="https://inspiring-marshmallow-1ba.netlify.app/" target="_blank" style="display:none;font-family:var(--font-mono);font-size:10px;color:var(--yellow);text-decoration:none;letter-spacing:1px;border:1px solid var(--yellow);padding:4px 12px;border-radius:4px;">Tabela Price →</a>
+  </div>
   <a href="/logout" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-decoration:none;letter-spacing:2px;text-transform:uppercase;">Sair →</a>
   <div class="footer-date" id="footerDate">--</div>
 </div>
@@ -894,8 +897,37 @@ async function fetchDados() {
   }
 }
 
-fetchDados();
-setInterval(fetchDados, REFRESH_MS);
+async function init() {
+  // Detecta tipo (SDR ou Closer)
+  const tipoResp = await fetch('/api/tipo');
+  const tipoData = await tipoResp.json();
+  const tipo = tipoData.tipo || 'sdr';
+  session_tipo = tipo;
+
+  if (tipo === 'closer') {
+    // Ajusta UI para Closer
+    document.title = 'Dashboard Closer – Board Academy';
+    // Remove meta reunião do header
+    document.getElementById('metaReuWrap').style.display = 'none';
+    // Muda KPIs
+    document.getElementById('kpiGrid').innerHTML = kpiGridCloser();
+    // Muda gráficos
+    document.getElementById('chartsRow').innerHTML = chartsRowCloser();
+    // Muda tabelas
+    document.getElementById('tablesRow').innerHTML = tablesRowCloser();
+    // Mostra atalho tabela price
+    document.getElementById('tabelaPriceWrap').style.display = 'block';
+    await fetchCloser();
+    setInterval(fetchCloser, REFRESH_MS);
+  } else {
+    await fetchDados();
+    setInterval(fetchDados, REFRESH_MS);
+  }
+}
+
+let session_tipo = 'sdr';
+
+init();
 
 // ── ABAS ────────────────────────────────────────────────────
 function mudarAba(aba, btn) {
@@ -1057,6 +1089,168 @@ async function confirmarDefinitivo() {
 document.getElementById('modalOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modalOverlay')) fecharModal();
 });
+
+// ── CLOSER ──────────────────────────────────────────────────
+
+function kpiGridCloser() {
+  return `
+    <div class="kpi-card">
+      <div class="kpi-label">Reuniões Realizadas</div>
+      <div class="kpi-value" id="kpiRealizadas">--</div>
+      <div class="kpi-sub">mês atual</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Reuniões Validadas</div>
+      <div class="kpi-value green" id="kpiValidadas">--</div>
+      <div class="kpi-sub" id="kpiValidadasSub">--</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">% Validadas</div>
+      <div class="kpi-value yellow" id="kpiPctValidadas">--</div>
+      <div class="kpi-sub">das realizadas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">R$ Ganhos</div>
+      <div class="kpi-value green" id="kpiValorBruto">--</div>
+      <div class="kpi-sub">valor bruto</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">R$ Ganhos Multiplicador</div>
+      <div class="kpi-value green" id="kpiValorMulti">--</div>
+      <div class="kpi-sub">com multiplicador</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">% Meta Financeira</div>
+      <div class="kpi-value yellow" id="kpiPctFin">--</div>
+      <div class="kpi-sub" id="kpiPctFinSub">--</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Volume de Referidos</div>
+      <div class="kpi-value" id="kpiReferidos">--</div>
+      <div class="kpi-sub">mês atual</div>
+    </div>`;
+}
+
+function chartsRowCloser() {
+  return `
+    <div class="chart-card">
+      <div class="chart-title">Reuniões Realizadas</div>
+      <div class="chart-canvas-wrap"><canvas id="chartRealizadas"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Valores Ganhos (R$)</div>
+      <div class="chart-canvas-wrap"><canvas id="chartValores"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Volume de Referidos</div>
+      <div class="chart-canvas-wrap"><canvas id="chartReferidos"></canvas></div>
+    </div>`;
+}
+
+function tablesRowCloser() {
+  return `
+    <div class="table-card">
+      <div class="table-title">Reuniões Realizadas</div>
+      <table class="data-table">
+        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
+        <tbody id="tblRealizadas"></tbody>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Ganhos</div>
+      <table class="data-table">
+        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
+        <tbody id="tblGanhos"></tbody>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Referidos</div>
+      <table class="data-table">
+        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
+        <tbody id="tblReferidos"></tbody>
+      </table>
+    </div>`;
+}
+
+async function fetchCloser() {
+  try {
+    const resp = await fetch('/api/closer');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const d = await resp.json();
+    if (d.erro) throw new Error(d.erro);
+    renderCloser(d);
+  } catch(err) {
+    document.querySelector('.loading-txt').textContent = 'Erro: ' + err.message;
+    console.error(err);
+  }
+}
+
+function renderCloser(d) {
+  const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
+  document.getElementById('avatarInitials').textContent = iniciais;
+  document.getElementById('userName').textContent  = d.colaborador.nome;
+  document.getElementById('userCargo').textContent = `${d.colaborador.cargo} · ${d.colaborador.time}`;
+  document.getElementById('metaFin').textContent   = fmtMoney(d.metas.meta_fin);
+
+  atualizarGauge(d.comissao.atingimento);
+
+  const badge = document.getElementById('comissaoBadge');
+  badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
+  badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
+  document.getElementById('comAtingimento').textContent = fmtPct(d.comissao.atingimento);
+  document.getElementById('comAcelerador').textContent  = 'x' + d.comissao.acelerador;
+  document.getElementById('comEstimada').textContent    = fmtMoney(d.comissao.estimada);
+
+  document.getElementById('kpiRealizadas').textContent    = d.kpis.reunioesRealizadas;
+  document.getElementById('kpiValidadas').textContent     = d.kpis.reunioesValidadas;
+  document.getElementById('kpiValidadasSub').textContent  = `de ${d.kpis.reunioesRealizadas} realizadas`;
+  document.getElementById('kpiPctValidadas').textContent  = fmtPct(d.kpis.pctValidadas);
+  document.getElementById('kpiValorBruto').textContent    = fmtMoney(d.kpis.valorBruto);
+  document.getElementById('kpiValorMulti').textContent    = fmtMoney(d.kpis.valorMultiplicador);
+  document.getElementById('kpiPctFin').textContent        = fmtPct(d.kpis.pctMetaFin);
+  document.getElementById('kpiPctFinSub').textContent     = `meta: ${fmtMoney(d.metas.meta_fin)}`;
+  document.getElementById('kpiReferidos').textContent     = d.kpis.volumeReferidos;
+
+  // Gráficos
+  const reLabels = d.graficos.serieRealizadas.map(x => fmtLabel(x.data));
+  const reData   = d.graficos.serieRealizadas.map(x => x.qtd);
+  const vaLabels = d.graficos.serieValores.map(x => fmtLabel(x.data));
+  const vaData   = d.graficos.serieValores.map(x => x.valor);
+  const rfLabels = d.graficos.serieReferidos.map(x => fmtLabel(x.data));
+  const rfData   = d.graficos.serieReferidos.map(x => x.qtd);
+
+  if (chartRe) chartRe.destroy();
+  if (chartVa) chartVa.destroy();
+  if (chartAg) chartAg.destroy();
+
+  chartRe = buildChart('chartRealizadas', 'line', reLabels, reData, '#2adf8a');
+  chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
+  chartAg = buildChart('chartReferidos',  'bar',  rfLabels, rfData, '#f5c400');
+
+  // Tabelas
+  renderTabela('tblRealizadas', d.tabelas.reunioesRealizadas.map(r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data)}</td><td class="mono">${r.hora||'--'}</td></tr>`
+  ).join(''));
+
+  renderTabela('tblGanhos', d.tabelas.ganhos.map(r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_ganho)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
+  ).join(''));
+
+  renderTabela('tblReferidos', d.tabelas.referidos.map(r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_criacao)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
+  ).join(''));
+
+  document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
+  carregarFoto(d.colaborador.foto);
+
+  const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const agora = new Date();
+  document.getElementById('mesAtual').textContent = meses[agora.getMonth()+1] + ' / ' + agora.getFullYear();
+
+  document.getElementById('loading').style.display   = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
 </script>
 </body>
 </html>
