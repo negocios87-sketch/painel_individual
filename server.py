@@ -461,7 +461,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
         },
         "tabelas": {
             "proximasReunioes": [{"deal_id": a.get("deal_id"), "nome": a.get("subject", ""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in proximas],
-            "reunioesGanhas":   [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time", ""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0)} for d in deals_ganhos[:10]],
+            "reunioesGanhas":   [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time", ""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0)} for d in deals_ganhos],
             "reunioesDesq": [{
                 "deal_id":      a.get("deal_id"),
                 "proprietario": next((d.get("owner_name") or (d.get("user_id") or {}).get("name","") for d in deals if d["id"] == a.get("deal_id")), "--")
@@ -636,9 +636,9 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
             "serieReferidos":  serie_referidos(refs_closer),
         },
         "tabelas": {
-            "reunioesRealizadas": [{"deal_id": a.get("deal_id"), "nome": a.get("subject",""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in reu_realizadas[:10]],
-            "ganhos": [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in deals_ganhos[:10]],
-            "referidos": [{"deal_id": d["id"], "nome": d.get("title"), "data_criacao": str(d.get("add_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in refs_closer[:10]],
+            "reunioesRealizadas": [{"deal_id": a.get("deal_id"), "nome": a.get("subject",""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in reu_realizadas],
+            "ganhos": [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in deals_ganhos],
+            "referidos": [{"deal_id": d["id"], "nome": d.get("title"), "data_criacao": str(d.get("add_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in refs_closer],
         },
         "tabela_price_url": TABELA_PRICE_URL,
         "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
