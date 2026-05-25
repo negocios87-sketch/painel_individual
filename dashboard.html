@@ -6,6 +6,63 @@
 <title>Dashboard SDR – Board Academy</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+
+// ── PAGINAÇÃO ────────────────────────────────────────────────
+const PAG_SIZE = 10;
+const _pagState = {};
+
+function pagInit(id, dados, renderFn) {
+  _pagState[id] = { dados, pagina: 0, renderFn };
+  pagRender(id);
+}
+
+function pagRender(id) {
+  const s = _pagState[id];
+  if (!s) return;
+  const { dados, pagina, renderFn } = s;
+  const total   = dados.length;
+  const totalPag = Math.ceil(total / PAG_SIZE);
+  const inicio  = pagina * PAG_SIZE;
+  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+
+  const tbody = document.getElementById(id);
+  if (!tbody) return;
+
+  if (!fatia.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+  } else {
+    tbody.innerHTML = fatia.map(renderFn).join('');
+  }
+
+  // Paginação
+  const pagWrapId = id + '_pag';
+  let pagWrap = document.getElementById(pagWrapId);
+  if (!pagWrap) {
+    pagWrap = document.createElement('div');
+    pagWrap.id = pagWrapId;
+    pagWrap.className = 'pag-wrap';
+    tbody.closest('table').after(pagWrap);
+  }
+
+  if (total <= PAG_SIZE) {
+    pagWrap.innerHTML = '';
+    return;
+  }
+
+  pagWrap.innerHTML = `
+    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
+    <div class="pag-btns">
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
+    </div>`;
+}
+
+function pagIr(id, nova) {
+  if (!_pagState[id]) return;
+  _pagState[id].pagina = nova;
+  pagRender(id);
+}
+
 // ── ABAS ────────────────────────────────────────────────────
 function mudarAba(aba, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -168,6 +225,63 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js">
+
+// ── PAGINAÇÃO ────────────────────────────────────────────────
+const PAG_SIZE = 10;
+const _pagState = {};
+
+function pagInit(id, dados, renderFn) {
+  _pagState[id] = { dados, pagina: 0, renderFn };
+  pagRender(id);
+}
+
+function pagRender(id) {
+  const s = _pagState[id];
+  if (!s) return;
+  const { dados, pagina, renderFn } = s;
+  const total   = dados.length;
+  const totalPag = Math.ceil(total / PAG_SIZE);
+  const inicio  = pagina * PAG_SIZE;
+  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+
+  const tbody = document.getElementById(id);
+  if (!tbody) return;
+
+  if (!fatia.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+  } else {
+    tbody.innerHTML = fatia.map(renderFn).join('');
+  }
+
+  // Paginação
+  const pagWrapId = id + '_pag';
+  let pagWrap = document.getElementById(pagWrapId);
+  if (!pagWrap) {
+    pagWrap = document.createElement('div');
+    pagWrap.id = pagWrapId;
+    pagWrap.className = 'pag-wrap';
+    tbody.closest('table').after(pagWrap);
+  }
+
+  if (total <= PAG_SIZE) {
+    pagWrap.innerHTML = '';
+    return;
+  }
+
+  pagWrap.innerHTML = `
+    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
+    <div class="pag-btns">
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
+    </div>`;
+}
+
+function pagIr(id, nova) {
+  if (!_pagState[id]) return;
+  _pagState[id].pagina = nova;
+  pagRender(id);
+}
+
 // ── ABAS ────────────────────────────────────────────────────
 function mudarAba(aba, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -501,6 +615,14 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
   .com-table th { text-align:left; font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; padding:0 12px 10px 0; border-bottom:1px solid var(--border); white-space:nowrap; }
   .com-table td { padding:12px 12px 4px 0; color:var(--white); font-family:var(--font-mono); font-size:13px; }
   .com-table td.yellow { color:var(--yellow); }
+
+  /* PAGINAÇÃO */
+  .pag-wrap { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+  .pag-info { font-family:var(--font-mono); font-size:10px; color:var(--muted); letter-spacing:1px; }
+  .pag-btns { display:flex; gap:6px; }
+  .pag-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); border-radius:4px; padding:4px 10px; font-family:var(--font-mono); font-size:11px; cursor:pointer; transition:all 0.2s; }
+  .pag-btn:hover:not(:disabled) { border-color:var(--yellow); color:var(--yellow); }
+  .pag-btn:disabled { opacity:0.3; cursor:not-allowed; }
 </style>
 </head>
 <body>
@@ -803,13 +925,22 @@ function atualizarCharts(graficos) {
   chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
 }
 
-function renderTabela(tbodyId, rows) {
-  const el = document.getElementById(tbodyId);
-  if (!rows || rows.length === 0) {
-    el.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+function renderTabela(tbodyId, dados, renderFn) {
+  // Suporte a chamada antiga (array de strings) e nova (array de objetos + fn)
+  if (typeof dados === 'string' || (Array.isArray(dados) && typeof dados[0] === 'string')) {
+    const el = document.getElementById(tbodyId);
+    if (!el) return;
+    const arr = Array.isArray(dados) ? dados : [dados];
+    if (!arr.length) {
+      el.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+      return;
+    }
+    el.innerHTML = arr.join('');
     return;
   }
-  el.innerHTML = rows;
+  // Nova: com paginação
+  if (!renderFn) return;
+  pagInit(tbodyId, dados || [], renderFn);
 }
 
 function render(d) {
@@ -844,33 +975,19 @@ function render(d) {
   atualizarCharts(d.graficos);
 
   // 7 - deal como link nas próximas reuniões
-  renderTabela('tblProximas', d.tabelas.proximasReunioes.map(r =>
-    `<tr>
-      <td>${dealLink(r.deal_id)}</td>
-      <td>${r.nome || '--'}</td>
-      <td class="mono">${fmtDate(r.data)}</td>
-      <td class="mono">${r.hora || '--'}</td>
-    </tr>`
-  ).join(''));
+  renderTabela('tblProximas', d.tabelas.proximasReunioes, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data)}</td><td class="mono">${r.hora||'--'}</td></tr>`
+  );
 
   // 7 - deal como link nas ganhas
-  renderTabela('tblGanhas', d.tabelas.reunioesGanhas.map(r =>
-    `<tr>
-      <td>${dealLink(r.deal_id)}</td>
-      <td>${r.nome || '--'}</td>
-      <td class="mono">${fmtDate(r.data_ganho)}</td>
-      <td class="money">${fmtMoney(r.valor_bruto)}</td>
-      <td class="money">${fmtMoney(r.valor_multi)}</td>
-    </tr>`
-  ).join(''));
+  renderTabela('tblGanhas', d.tabelas.reunioesGanhas, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_ganho)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
+  );
 
   // 9 - desq: só link e proprietário
-  renderTabela('tblDesq', d.tabelas.reunioesDesq.map(r =>
-    `<tr>
-      <td>${dealLink(r.deal_id)}</td>
-      <td>${r.proprietario || '--'}</td>
-    </tr>`
-  ).join(''));
+  renderTabela('tblDesq', d.tabelas.reunioesDesq, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.proprietario||'--'}</td></tr>`
+  );
 
   document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
   carregarFoto(d.colaborador.foto);
@@ -928,6 +1045,63 @@ async function init() {
 let session_tipo = 'sdr';
 
 init();
+
+
+// ── PAGINAÇÃO ────────────────────────────────────────────────
+const PAG_SIZE = 10;
+const _pagState = {};
+
+function pagInit(id, dados, renderFn) {
+  _pagState[id] = { dados, pagina: 0, renderFn };
+  pagRender(id);
+}
+
+function pagRender(id) {
+  const s = _pagState[id];
+  if (!s) return;
+  const { dados, pagina, renderFn } = s;
+  const total   = dados.length;
+  const totalPag = Math.ceil(total / PAG_SIZE);
+  const inicio  = pagina * PAG_SIZE;
+  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+
+  const tbody = document.getElementById(id);
+  if (!tbody) return;
+
+  if (!fatia.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+  } else {
+    tbody.innerHTML = fatia.map(renderFn).join('');
+  }
+
+  // Paginação
+  const pagWrapId = id + '_pag';
+  let pagWrap = document.getElementById(pagWrapId);
+  if (!pagWrap) {
+    pagWrap = document.createElement('div');
+    pagWrap.id = pagWrapId;
+    pagWrap.className = 'pag-wrap';
+    tbody.closest('table').after(pagWrap);
+  }
+
+  if (total <= PAG_SIZE) {
+    pagWrap.innerHTML = '';
+    return;
+  }
+
+  pagWrap.innerHTML = `
+    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
+    <div class="pag-btns">
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
+    </div>`;
+}
+
+function pagIr(id, nova) {
+  if (!_pagState[id]) return;
+  _pagState[id].pagina = nova;
+  pagRender(id);
+}
 
 // ── ABAS ────────────────────────────────────────────────────
 function mudarAba(aba, btn) {
@@ -1228,17 +1402,15 @@ function renderCloser(d) {
   chartAg = buildChart('chartReferidos',  'bar',  rfLabels, rfData, '#f5c400');
 
   // Tabelas
-  renderTabela('tblRealizadas', d.tabelas.reunioesRealizadas.map(r =>
+  renderTabela('tblRealizadas', d.tabelas.reunioesRealizadas, r =>
     `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data)}</td><td class="mono">${r.hora||'--'}</td></tr>`
-  ).join(''));
-
-  renderTabela('tblGanhos', d.tabelas.ganhos.map(r =>
+  );
+  renderTabela('tblGanhos', d.tabelas.ganhos, r =>
     `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_ganho)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
-  ).join(''));
-
-  renderTabela('tblReferidos', d.tabelas.referidos.map(r =>
+  );
+  renderTabela('tblReferidos', d.tabelas.referidos, r =>
     `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_criacao)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
-  ).join(''));
+  );
 
   document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
   carregarFoto(d.colaborador.foto);
