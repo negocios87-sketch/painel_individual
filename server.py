@@ -134,14 +134,13 @@ def buscar_usuario(usuario, senha):
             return str(row.get("usuario", ""))
     return None
 
-def buscar_colaborador(nome):
+def buscar_colaborador(nome, mes=None, ano=None):
     df = ler_sheet(URL_COLAB)
     df.columns = [c.strip() for c in df.columns]
     hoje = date.today()
-    ano_atual = hoje.year
-    mes_atual = hoje.month
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
 
-    # Detecta colunas de referência de mês/ano
     col_mes_ref = next((c for c in df.columns if "mes" in norm(c) and "ref" in norm(c)), None)
     col_ano_ref = next((c for c in df.columns if "ano" in norm(c) and "ref" in norm(c)), None)
 
@@ -154,18 +153,16 @@ def buscar_colaborador(nome):
         if norm(status) != "ativo" or norm(subarea) not in TIMES_ESCOPO:
             continue
 
-        # Se tem colunas de referência, filtra pelo mês atual
         if col_mes_ref and col_ano_ref:
             try:
                 mes_ref = int(float(str(row.get(col_mes_ref, 0))))
                 ano_ref = int(float(str(row.get(col_ano_ref, 0))))
-                if ano_ref == ano_atual and mes_ref == mes_atual:
+                if ano_ref == ano and mes_ref == mes:
                     return {
                         "nome":  str(row.get("Nome", "")),
                         "time":  subarea,
                         "cargo": str(row.get("Cargo", "")),
                     }
-                # Guarda como fallback caso não encontre o mês exato
                 melhor = {
                     "nome":  str(row.get("Nome", "")),
                     "time":  subarea,
@@ -178,7 +175,6 @@ def buscar_colaborador(nome):
                     "cargo": str(row.get("Cargo", "")),
                 }
         else:
-            # Sem colunas de referência, retorna primeira linha ativa
             return {
                 "nome":  str(row.get("Nome", "")),
                 "time":  subarea,
@@ -785,14 +781,14 @@ def api_sdr():
         return jsonify({"erro": "Não autenticado"}), 401
     nome = session["nome"]
     try:
-        colaborador = buscar_colaborador(nome)
-        if not colaborador:
-            return jsonify({"erro": f"'{nome}' nao encontrado ou inativo"}), 404
-
         mes = request.args.get("mes", type=int) or date.today().month
         ano = request.args.get("ano", type=int) or date.today().year
         if ano < 2026 or (ano == 2026 and mes < 5):
             mes, ano = 5, 2026
+
+        colaborador = buscar_colaborador(nome, mes, ano)
+        if not colaborador:
+            return jsonify({"erro": f"'{nome}' nao encontrado ou inativo para {mes}/{ano}"}), 404
 
         metas = buscar_metas(nome, mes, ano)
         if not metas:
@@ -856,13 +852,18 @@ def api_closer():
         return jsonify({"erro": "Não autenticado"}), 401
     nome = session["nome"]
     try:
-        colaborador = buscar_colaborador(nome)
-        if not colaborador:
-            return jsonify({"erro": f"'{nome}' nao encontrado"}), 404
+        mes = request.args.get("mes", type=int) or date.today().month
+        ano = request.args.get("ano", type=int) or date.today().year
+        if ano < 2026 or (ano == 2026 and mes < 5):
+            mes, ano = 5, 2026
 
-        metas = buscar_metas(nome)
+        colaborador = buscar_colaborador(nome, mes, ano)
+        if not colaborador:
+            return jsonify({"erro": f"'{nome}' nao encontrado para {mes}/{ano}"}), 404
+
+        metas = buscar_metas(nome, mes, ano)
         if not metas:
-            return jsonify({"erro": f"Metas nao encontradas para o mes atual"}), 404
+            return jsonify({"erro": f"Metas nao encontradas para {mes}/{ano}"}), 404
 
         ote = buscar_ote(colaborador["cargo"])
         if not ote:
@@ -872,11 +873,6 @@ def api_closer():
         user_id = encontrar_user_id(users, nome)
         if not user_id:
             return jsonify({"erro": f"Usuario nao encontrado no Pipedrive"}), 404
-
-        mes = request.args.get("mes", type=int) or date.today().month
-        ano = request.args.get("ano", type=int) or date.today().year
-        if ano < 2026 or (ano == 2026 and mes < 5):
-            mes, ano = 5, 2026
 
         deals      = buscar_deals(mes, ano)
         activities = buscar_activities(mes, ano)
