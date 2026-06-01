@@ -1,904 +1,1073 @@
-"""
-Board Academy — Dashboard SDR
-Servidor Python + Flask para Render
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comissão — Board Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;font-size:14px;color:#111;background:#f8f8f6;min-height:100vh}
+a{color:inherit;text-decoration:none}
+/* HEADER */
+header{background:#fff;border-bottom:1px solid #e8e8e4;padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.logo{font-size:14px;font-weight:600;letter-spacing:.01em;color:#111}
+.logo span{color:#d94040}
+.hcontrols{display:flex;align-items:center;gap:10px}
+.period-box{display:flex;align-items:center;gap:6px;border:1px solid #e0e0da;border-radius:8px;padding:6px 12px;background:#fff}
+.period-box select{border:none;background:transparent;font-size:13px;font-family:inherit;color:#111;outline:none;cursor:pointer}
+.period-box select option{background:#fff}
+/* BUTTONS */
+.btn{font-family:inherit;font-size:12px;font-weight:500;padding:7px 14px;border-radius:7px;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .15s,border-color .15s}
+.btn-outline{background:#fff;border-color:#e0e0da;color:#444}
+.btn-outline:hover{border-color:#aaa;color:#111}
+.btn-red{background:#d94040;color:#fff;border-color:#d94040}
+.btn-red:hover{background:#c03333}
+.btn-green{background:#1a7f4b;color:#fff;border-color:#1a7f4b}
+.btn-green:hover{background:#156040}
+.btn-amber{background:#d97706;color:#fff;border-color:#d97706}
+.btn-amber:hover{background:#b86505}
+/* MAIN */
+main{padding:28px 32px;max-width:1400px;margin:0 auto}
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:28px}
+.scard{background:#fff;border:1px solid #e8e8e4;border-radius:10px;padding:14px 16px}
+.scard-label{font-size:11px;color:#888;font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
+.scard-value{font-size:20px;font-weight:600;color:#111}
+.scard-value.red{color:#d94040}
+.scard-value.green{color:#1a7f4b}
+.scard-value.amber{color:#d97706}
+/* TABS */
+.tabs{display:flex;gap:2px;background:#ebebea;border-radius:9px;padding:3px;margin-bottom:24px;width:fit-content}
+.tab{padding:7px 20px;border-radius:7px;font-size:13px;font-weight:500;color:#666;cursor:pointer;transition:all .15s;border:none;background:transparent;font-family:inherit}
+.tab.active{background:#fff;color:#111;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+/* SEARCH */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.search{border:1px solid #e0e0da;border-radius:7px;padding:7px 12px;font-size:13px;font-family:inherit;background:#fff;color:#111;outline:none;width:240px}
+.search:focus{border-color:#999}
+/* TABLE */
+.squad-block{margin-bottom:32px}
+.squad-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#888;padding:0 0 8px;border-bottom:1px solid #e8e8e4;margin-bottom:0}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#888;padding:10px 14px;text-align:left;background:#fff;border-bottom:1px solid #e8e8e4;white-space:nowrap}
+thead th.right{text-align:right}
+tbody tr{background:#fff;border-bottom:1px solid #f0f0ec;transition:background .1s;cursor:pointer}
+tbody tr:hover{background:#fafaf8}
+tbody tr.validado{background:#f0faf5}
+tbody tr.ajustado td:first-child{border-left:3px solid #d97706}
+td{padding:11px 14px;font-size:13px;color:#222;vertical-align:middle}
+td.right{text-align:right;font-variant-numeric:tabular-nums}
+td.muted{color:#888}
+/* BADGES */
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase}
+.badge-sdr{background:#fef9e7;color:#9a6a00;border:1px solid #fde68a}
+.badge-closer{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.badge-lider{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.badge-head{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.badge-gerente{background:#faf5ff;color:#6b21a8;border:1px solid #e9d5ff}
+.badge-inside{background:#f0f9ff;color:#0c4a6e;border:1px solid #bae6fd}
+/* PCT PILL */
+.pct{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:4px;font-variant-numeric:tabular-nums}
+.pct-green{background:#f0fdf4;color:#15803d}
+.pct-yellow{background:#fefce8;color:#854d0e}
+.pct-orange{background:#fff7ed;color:#9a3412}
+.pct-red{background:#fef2f2;color:#991b1b}
+.pct-gray{background:#f5f5f4;color:#737373}
+td.col-ating{background:#eeede9;font-weight:600}
+thead th.col-ating{background:#e2e1dc;color:#333}
+.bonus-input{width:120px;border:1px solid #e0e0da;border-radius:5px;padding:5px 8px;font-size:12px;font-family:inherit;color:#111;background:#fff;outline:none;text-align:right}
+.bonus-input:focus{border-color:#1a7f4b}
+.bonus-saved{border-color:#bbf7d0;background:#f0fdf4}
+/* COMISSÃO VALUE */
+.comval{font-weight:600;font-size:13px;color:#111;font-variant-numeric:tabular-nums}
+.comval.ajustado{color:#d97706}
+/* STATUS */
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.dot-green{background:#1a7f4b}
+.dot-yellow{background:#d97706}
+.dot-gray{background:#d1d5db}
+/* ACTIONS */
+.act-btn{font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:5px;border:1px solid #e0e0da;background:#fff;color:#555;cursor:pointer}
+.act-btn:hover{border-color:#999;color:#111}
+.act-btn.green{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
+.act-btn.green:hover{background:#dcfce7}
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:#aaa;font-size:13px}
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:14px;border:1px solid #e0e0da;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;transform:translateY(16px);transition:transform .2s}
+.overlay.open .modal{transform:translateY(0)}
+.mhead{padding:18px 22px;border-bottom:1px solid #e8e8e4;display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:#fff;z-index:1}
+.mhead-info .mtitle{font-size:17px;font-weight:600}
+.mhead-info .msub{font-size:12px;color:#888;margin-top:2px}
+.mclose{background:none;border:none;font-size:18px;color:#aaa;cursor:pointer;line-height:1;padding:2px}
+.mclose:hover{color:#333}
+.mbody{padding:20px 22px}
+.msection{margin-bottom:20px}
+.msection h4{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#d94040;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0f0ec}
+.formula{background:#f8f8f6;border:1px solid #e8e8e4;border-radius:8px;padding:14px 16px;font-family:'Courier New',monospace;font-size:12px;line-height:1.9;color:#333}
+.formula .hl{color:#d97706;font-weight:600}
+.formula .res{color:#1a7f4b;font-weight:600}
+.formula .op{color:#aaa}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kv-item .kv-key{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.kv-item .kv-val{font-size:14px;font-weight:500;color:#111}
+.ajlog{background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:11px 13px;margin-bottom:8px}
+.ajlog .ajl-header{font-size:10px;color:#d97706;font-weight:600;margin-bottom:3px}
+.ajlog .ajl-text{font-size:12px;font-family:'Courier New',monospace;color:#333}
+.ajlog .ajl-motivo{font-size:11px;color:#888;margin-top:3px;font-style:italic}
+/* AJUSTE FORM */
+.ajform{background:#f8f8f6;border:1px solid #e0e0da;border-radius:8px;padding:16px;margin-top:12px}
+.flabel{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#666;display:block;margin-bottom:5px}
+.finput,.fselect{width:100%;border:1px solid #e0e0da;border-radius:6px;padding:8px 11px;font-size:13px;font-family:inherit;color:#111;background:#fff;outline:none;margin-bottom:12px}
+.finput:focus,.fselect:focus{border-color:#999}
+.factions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+/* TOAST */
+.toasts{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:7px;z-index:200}
+.toast{background:#fff;border:1px solid #e0e0da;border-radius:8px;padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);animation:tin .2s ease}
+@keyframes tin{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+.toast.ok{border-color:#bbf7d0;color:#166534}
+.toast.err{border-color:#fecaca;color:#991b1b}
+.toast.warn{border-color:#fde68a;color:#854d0e}
+/* LOADING */
+.loader{position:fixed;inset:0;background:rgba(248,248,246,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:300;transition:opacity .2s}
+.loader.gone{opacity:0;pointer-events:none}
+.spin{width:32px;height:32px;border:2px solid #e0e0da;border-top-color:#d94040;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltext{font-size:12px;color:#888}
 
-Variáveis de ambiente necessárias no Render:
-    PIPEDRIVE_KEY = sua_chave_aqui
-    SECRET_KEY    = qualquer_string_aleatoria
-"""
+/* MDO TABLE */
+.mdo-wrap{width:100%;margin-bottom:24px}
+.mdo-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+.mdo-table thead th{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#666;padding:8px 6px;text-align:left;background:#fff;border-bottom:2px solid #e8e8e4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mdo-table thead th.right{text-align:right}
+.mdo-table thead th.center{text-align:center}
+.mdo-table tbody tr{background:#fff;border-bottom:1px solid #f0f0ec}
+.mdo-table tbody tr:hover{background:#fafaf8}
+.mdo-table tbody tr.lider-row{background:#f8f8f6}
+.mdo-table tbody tr.lider-row td{font-style:italic;color:#555}
+.mdo-table td{padding:7px 6px;vertical-align:middle;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mdo-table td.right{text-align:right;font-variant-numeric:tabular-nums}
+.mdo-table td.center{text-align:center}
+.mdo-table td.muted{color:#aaa}
+.mdo-table td.bold-col{font-weight:600}
+.mdo-table td.col-ating{background:#eeede9;font-weight:600;text-align:right}
+.mdo-input{width:80px;border:1px solid #e0e0da;border-radius:4px;padding:3px 5px;font-size:10px;font-family:inherit;color:#111;background:#fff;outline:none;text-align:right}
+.mdo-input:focus{border-color:#1a7f4b}
+.mdo-input.filled{border-color:#bbf7d0;background:#f0fdf4}
+.mdo-obs{width:100%;border:1px solid #e0e0da;border-radius:4px;padding:3px 5px;font-size:10px;font-family:inherit;color:#111;background:#fff;outline:none}
+.mdo-obs:focus{border-color:#999}
+.squad-sep td{background:#f4f4f2!important;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#888;padding:5px 6px!important;border-top:1px solid #e0e0da}
+.mdo-total-row td{background:#1a1a1a!important;color:#fff!important;font-weight:600;font-size:11px}
+.mdo-total-row td.col-ating{background:#333!important;color:#FFD700!important}
+</style>
+</head>
+<body>
 
-from flask import Flask, jsonify, request, session, redirect, send_from_directory
-import requests as req
-import pandas as pd
-import os
-import unicodedata
-from datetime import date, datetime, timedelta
-from io import StringIO
-import math
+<div class="loader" id="loader">
+  <div class="spin"></div>
+  <div class="ltext" id="ltext">Carregando dados...</div>
+</div>
 
-def limpar_nans(obj):
-    if isinstance(obj, dict):
-        return {k: limpar_nans(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [limpar_nans(v) for v in obj]
-    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
-        return 0
-    return obj
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+<div class="toasts" id="toasts"></div>
 
-app = Flask(__name__, static_folder="static")
-app.secret_key = os.getenv("SECRET_KEY", "boardacademy2026")
+<header>
+  <div class="logo">Board <span>Academy</span> &mdash; Comissões</div>
+  <div class="hcontrols">
+    <div class="period-box">
+      <select id="selMes"></select>
+      <select id="selAno"></select>
+    </div>
+    <button class="btn btn-outline" onclick="carregarDados()">↻ Atualizar</button>
+    <button class="btn btn-outline" onclick="salvar()">Salvar</button>
+    <button class="btn btn-amber" onclick="exportar()">↓ Excel</button>
+  </div>
+</header>
 
-# ── CONFIG ──────────────────────────────────────────────────
-API_KEY  = os.getenv("PIPEDRIVE_KEY")
-BASE_V1  = "https://boardacademy.pipedrive.com/api/v1"
-BASE_V2  = "https://boardacademy.pipedrive.com/api/v2"
+<main>
+  <div class="stats-row" id="statsRow">
+    <div class="scard"><div class="scard-label">Total Comissão</div><div class="scard-value amber" id="sTotal">—</div></div>
+    <div class="scard"><div class="scard-label">Pessoas</div><div class="scard-value" id="sPessoas">—</div></div>
+    <div class="scard"><div class="scard-label">Validados</div><div class="scard-value green" id="sValid">—</div></div>
+    <div class="scard"><div class="scard-label">Ajustes</div><div class="scard-value red" id="sAjust">—</div></div>
+    <div class="scard"><div class="scard-label">Dias úteis</div><div class="scard-value" id="sDU">—</div></div>
+    <div class="scard"><div class="scard-label">Atualizado</div><div class="scard-value" id="sAt" style="font-size:13px">—</div></div>
+  </div>
 
-GITHUB_FOTOS = "https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main"
+  <div class="tabs">
+    <button class="tab active" onclick="setTab(this,'sdrs')">SDRs</button>
+    <button class="tab" onclick="setTab(this,'closers')">Closers</button>
+    <button class="tab" onclick="setTab(this,'lideranca')">Liderança</button>
+    <button class="tab" onclick="setTab(this,'bonus')">Bônus</button>
+    <button class="tab" onclick="setTab(this,'mdo')">MDO</button>
+  </div>
 
-URL_COLAB = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=1782440078&single=true&output=csv"
-URL_METAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=0&single=true&output=csv"
-URL_OTE   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=569278086&single=true&output=csv"
+  <div class="toolbar">
+    <input class="search" type="text" placeholder="Buscar..." id="search" oninput="renderTab()">
+    <span id="countLabel" style="font-size:12px;color:#aaa"></span>
+  </div>
 
-URL_COMISSOES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=1720844569&single=true&output=csv"
-URL_USERS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=160245570&single=true&output=csv"
+  <div id="tabContent"></div>
+</main>
 
-FILTER_DEALS      = 1464384
-FILTER_ACTIVITIES = 1310451
-FILTER_DEALS_RV   = 1466157
-FILTER_REFERIDOS  = 1562285
-TABELA_PRICE_URL  = "https://inspiring-marshmallow-1ba.netlify.app/"
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mhead">
+      <div class="mhead-info">
+        <div class="mtitle" id="mTitle">—</div>
+        <div class="msub" id="mSub">—</div>
+      </div>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody" id="mBody"></div>
+  </div>
+</div>
 
-CF_MULTIPLICADOR = "7e0e43c2734751f77be292a72527f638a850ad50"
-CF_QUALIFICADOR  = "a6f13cc27c8d041f3af4091283ce0d4fe0913875"
-CF_REUNIAO_VALID = "7299bf170c5deab9b4fd8c2275f55faf51984dea"
+<script>
+const MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-RV_SIM    = "411"
-RV_NAO    = "412"
-RV_NOSHOW = "481"
+// Excluídos
+const EXCLUIR_SQUADS = ['zenite','vanguard','inteligencia comercial','inteligência comercial'];
+const EXCLUIR_NOMES  = ['farias souza'];
+function excluido(p) {
+  if (!p) return true;
+  const nn = (p.nome_norm||'').toLowerCase();
+  const sq = (p.squad||'').toLowerCase();
+  if (EXCLUIR_NOMES.some(n => nn.includes(n))) return true;
+  if (EXCLUIR_SQUADS.some(s => sq.includes(s))) return true;
+  if (nn.startsWith('lic') || sq.startsWith('lic')) return true;
+  return false;
+}
 
-TIMES_ESCOPO = ["elite", "sniper", "atlantis", "mgm", "orion", "latam", "zenite"]
+let dados = null;
+let tabAtiva = 'sdrs';
+let ajNomeNorm = null;
 
-# ── HELPERS ─────────────────────────────────────────────────
-def norm(s):
-    if not s:
-        return ""
-    s = str(s).strip().lower()
-    return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode()
+// Init period selectors
+(function(){
+  const hoje = new Date();
+  let mes = hoje.getMonth(); // mês anterior
+  let ano = hoje.getFullYear();
+  if (mes === 0) { mes = 12; ano--; }
 
-def arred(v):
-    try:
-        return round(float(v), 2)
-    except:
-        return 0.0
+  const sm = document.getElementById('selMes');
+  MESES.slice(1).forEach((m,i) => {
+    const o = document.createElement('option');
+    o.value = i+1; o.textContent = m;
+    if (i+1 === mes) o.selected = true;
+    sm.appendChild(o);
+  });
 
-def acelerador(pct):
-    if pct >= 120: return 1.5
-    if pct >= 100: return 1.0
-    if pct >= 86:  return 0.7
-    if pct >= 60:  return 0.5
-    return 0.0
+  const sa = document.getElementById('selAno');
+  for (let y = ano; y >= ano-3; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === ano) o.selected = true;
+    sa.appendChild(o);
+  }
 
-def dias_uteis_passados():
-    hoje = date.today()
-    count = 0
-    d = date(hoje.year, hoje.month, 1)
-    while d <= hoje:
-        if d.weekday() < 5:
-            count += 1
-        if d == hoje:
-            break
-        try:
-            d = date(d.year, d.month, d.day + 1)
-        except:
-            break
-    return max(count, 1)
+  sm.addEventListener('change', carregarDados);
+  sa.addEventListener('change', carregarDados);
+})();
 
-def ajustar_hora(hora_str):
-    if not hora_str:
-        return None
-    try:
-        h, m = hora_str[:5].split(":")
-        dt = datetime(2000, 1, 1, int(h), int(m)) - timedelta(hours=3)
-        return dt.strftime("%H:%M")
-    except:
-        return hora_str
+function getMesAno() {
+  return {
+    mes: +document.getElementById('selMes').value,
+    ano: +document.getElementById('selAno').value
+  };
+}
 
-def url_foto(nome):
-    base = f"{GITHUB_FOTOS}/{nome}"
-    for ext in ["jpg", "jpeg", "png", "JPG", "JPEG", "PNG"]:
-        url = f"{base}.{ext}"
-        try:
-            r = req.head(url, timeout=5)
-            if r.status_code == 200:
-                return url
-        except:
-            pass
-    return None
+function showLoader(t='Carregando...') {
+  document.getElementById('ltext').textContent = t;
+  document.getElementById('loader').classList.remove('gone');
+}
+function hideLoader() { document.getElementById('loader').classList.add('gone'); }
 
-# ── SHEETS ──────────────────────────────────────────────────
-def ler_sheet(url):
-    resp = req.get(url, timeout=15)
-    resp.encoding = "utf-8"
-    resp.raise_for_status()
-    return pd.read_csv(StringIO(resp.text))
+function toast(msg, tipo='ok') {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast ' + tipo;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 
-def buscar_usuario(usuario, senha):
-    df = ler_sheet(URL_USERS)
-    df.columns = [c.strip().lower() for c in df.columns]
-    for _, row in df.iterrows():
-        if (norm(str(row.get("usuario", ""))) == norm(usuario) and
-            str(row.get("senha", "")).strip() == str(senha).strip()):
-            return str(row.get("usuario", ""))
-    return None
+function fBRL(v) {
+  return 'R$ ' + (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fPct(v) { return (parseFloat(v)||0).toFixed(1) + '%'; }
 
-def buscar_colaborador(nome, mes=None, ano=None):
-    df = ler_sheet(URL_COLAB)
-    df.columns = [c.strip() for c in df.columns]
-    hoje = date.today()
-    mes  = mes or hoje.month
-    ano  = ano or hoje.year
+function corPct(v) {
+  const n = parseFloat(v)||0;
+  if (n >= 100) return 'pct-green';
+  if (n >= 86)  return 'pct-yellow';
+  if (n >= 60)  return 'pct-orange';
+  if (n > 0)    return 'pct-red';
+  return 'pct-gray';
+}
 
-    col_mes_ref = next((c for c in df.columns if "mes" in norm(c) and "ref" in norm(c)), None)
-    col_ano_ref = next((c for c in df.columns if "ano" in norm(c) and "ref" in norm(c)), None)
+function roleBadge(role) {
+  const map = {
+    sdr:'badge-sdr',closer:'badge-closer',lider_sdr:'badge-lider',
+    head:'badge-head',gerente:'badge-gerente',inside:'badge-inside'
+  };
+  const labels = {
+    sdr:'SDR',closer:'Closer',lider_sdr:'Líder SDR',
+    head:'Head',gerente:'Gerente',inside:'Inside'
+  };
+  return `<span class="badge ${map[role]||'badge-sdr'}">${labels[role]||role}</span>`;
+}
 
-    melhor = None
-    for _, row in df.iterrows():
-        if norm(str(row.get("Nome", ""))) != norm(nome):
-            continue
-        subarea = str(row.get("Subarea", ""))
-        status  = str(row.get("Status (Euqipe Comercial)", ""))
-        if norm(status) != "ativo" or norm(subarea) not in TIMES_ESCOPO:
-            continue
+async function carregarDados() {
+  const {mes,ano} = getMesAno();
+  showLoader(`Puxando ${MESES[mes]} ${ano}...`);
+  try {
+    const r = await fetch(`/api/comissoes?mes=${mes}&ano=${ano}`);
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    dados = d;
+    atualizarStats();
+    renderTab();
+  } catch(e) {
+    toast('Erro: '+e.message, 'err');
+  } finally {
+    hideLoader();
+  }
+}
 
-        if col_mes_ref and col_ano_ref:
-            try:
-                mes_ref = int(float(str(row.get(col_mes_ref, 0))))
-                ano_ref = int(float(str(row.get(col_ano_ref, 0))))
-                if ano_ref == ano and mes_ref == mes:
-                    return {
-                        "nome":  str(row.get("Nome", "")),
-                        "time":  subarea,
-                        "cargo": str(row.get("Cargo", "")),
-                    }
-                melhor = {
-                    "nome":  str(row.get("Nome", "")),
-                    "time":  subarea,
-                    "cargo": str(row.get("Cargo", "")),
-                }
-            except:
-                melhor = {
-                    "nome":  str(row.get("Nome", "")),
-                    "time":  subarea,
-                    "cargo": str(row.get("Cargo", "")),
-                }
-        else:
-            return {
-                "nome":  str(row.get("Nome", "")),
-                "time":  subarea,
-                "cargo": str(row.get("Cargo", "")),
-            }
+function atualizarStats() {
+  if (!dados) return;
+  const ps = (dados.pessoas||[]).filter(p => !excluido(p));
+  const total = ps.reduce((s,p)=>s+(p.comissao_final||0),0);
+  document.getElementById('sTotal').textContent = fBRL(total);
+  document.getElementById('sPessoas').textContent = ps.length;
+  document.getElementById('sValid').textContent = ps.filter(p=>p.validado).length + '/' + ps.length;
+  document.getElementById('sAjust').textContent = ps.filter(p=>p.ajustes&&p.ajustes.length).length;
+  document.getElementById('sDU').textContent = dados.du_total||'—';
+  document.getElementById('sAt').textContent = dados.atualizado_em||'—';
+}
 
-    return melhor
+function setTab(el, tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  tabAtiva = tab;
+  renderTab();
+}
 
-def buscar_metas(nome, mes=None, ano=None):
-    df = ler_sheet(URL_METAS)
-    df.columns = [c.strip() for c in df.columns]
-    hoje = date.today()
-    mes  = mes or hoje.month
-    ano  = ano or hoje.year
+function pessoasDaTab() {
+  if (!dados) return [];
+  const busca = document.getElementById('search').value.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  let ps = (dados.pessoas||[]).filter(p => !excluido(p));
 
-    def limpar_numero(val):
-        try:
-            return float(str(val or "0").strip())
-        except:
-            return 0.0
+  if (tabAtiva === 'sdrs')
+    ps = ps.filter(p => p.role === 'sdr');
+  else if (tabAtiva === 'closers')
+    ps = ps.filter(p => p.role === 'closer' || p.role === 'inside');
+  else if (tabAtiva === 'lideranca')
+    ps = ps.filter(p => ['lider_sdr','head','gerente'].includes(p.role));
+  else if (tabAtiva === 'bonus')
+    ps = ps.filter(p => !['lider_sdr','head','gerente'].includes(p.role) && (parseFloat(p.pct_atingimento)||0) > 69.9999);
 
-    for _, row in df.iterrows():
-        try:
-            ano_row = int(float(str(row.get("Ano", 0))))
-            mes_row = int(float(str(row.get("Mes", row.get("Mês", 0)))))
-        except:
-            continue
-        if norm(row.get("Nome")) == norm(nome) and ano_row == ano and mes_row == mes:
-            ramp_str = str(row.get("% de Rampagem", "1") or "1").replace("%","").strip()
-            ramp_val = float(ramp_str)
-            ramp = ramp_val / 100 if ramp_val > 1 else ramp_val
-            return {
-                "meta_reu":   limpar_numero(row.get("Meta de Reunioes", row.get("Meta de Reuniões", 0))),
-                "meta_fin":   limpar_numero(row.get("Meta Financeira", 0)),
-                "rampagem":   ramp,
-                "dias_uteis": int(float(row.get("Dias Uteis", 20) or 20)),
-            }
-    return None
+  if (busca) ps = ps.filter(p =>
+    (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(busca) ||
+    (p.squad||'').toLowerCase().includes(busca)
+  );
+  return ps;
+}
 
-def buscar_ote(cargo):
-    df = ler_sheet(URL_OTE)
-    df.columns = [c.strip() for c in df.columns]
-    for _, row in df.iterrows():
-        nivel = str(row.get("Nivel", row.get("Nível", "")))
-        if norm(nivel) == norm(cargo):
-            return {
-                "total":    float(row.get("ote_total", 0) or 0),
-                "fixo":     float(row.get("fixo", 0) or 0),
-                "variavel": float(row.get("variavel", 0) or 0),
-            }
-    return None
+function renderTab() {
+  const c = document.getElementById('tabContent');
+  if (!dados) { c.innerHTML = '<div class="empty">Nenhum dado carregado.</div>'; return; }
 
-# ── PIPEDRIVE ────────────────────────────────────────────────
-def buscar_qualificador_id(nome):
-    resp = req.get(f"{BASE_V1}/dealFields",
-        params={"api_token": API_KEY}, timeout=15)
-    resp.raise_for_status()
-    fields = resp.json().get("data") or []
-    for field in fields:
-        if field.get("key") == CF_QUALIFICADOR:
-            for opt in (field.get("options") or []):
-                if norm(opt.get("label","")) == norm(nome):
-                    return str(opt.get("id"))
-    return None
+  if (tabAtiva === 'bonus') { renderBonus(); return; }
+  if (tabAtiva === 'mdo') { renderMDO(); return; }
 
-def buscar_users():
-    resp = req.get(f"{BASE_V1}/users",
-        params={"api_token": API_KEY}, timeout=15)
-    resp.raise_for_status()
-    mapa = {}
-    for u in (resp.json().get("data") or []):
-        mapa[u["id"]] = u["name"]
-    return mapa
+  const ps = pessoasDaTab();
+  document.getElementById('countLabel').textContent = ps.length + ' pessoa(s)';
 
-def encontrar_user_id(users, nome):
-    for uid, uname in users.items():
-        if norm(uname) == norm(nome):
-            return uid
-    return None
+  if (!ps.length) {
+    c.innerHTML = '<div class="empty">Nenhuma pessoa encontrada.</div>';
+    return;
+  }
 
-def buscar_deals(mes=None, ano=None):
-    todos, start = [], 0
-    hoje = date.today()
-    mes  = mes or hoje.month
-    ano  = ano or hoje.year
-    mes_str = f"{ano}-{mes:02d}"
-    while True:
-        resp = req.get(f"{BASE_V1}/deals", params={
-            "filter_id": FILTER_DEALS,
-            "limit": 500,
-            "start": start,
-            "api_token": API_KEY
-        }, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        lote = data.get("data") or []
-        # Filtra pelo mês selecionado
-        for d in lote:
-            wt = str(d.get("won_time", ""))[:7]
-            if wt == mes_str:
-                todos.append(d)
-        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
-        if not mais or not lote:
-            break
-        start += 500
-    return todos
+  // Agrupa por squad
+  const grupos = {};
+  ps.forEach(p => {
+    const k = p.squad||'—';
+    if (!grupos[k]) grupos[k] = [];
+    grupos[k].push(p);
+  });
 
-def buscar_activities(mes=None, ano=None):
-    todos, cursor = [], None
-    hoje = date.today()
-    mes  = mes or hoje.month
-    ano  = ano or hoje.year
-    mes_str = f"{ano}-{mes:02d}"
-    while True:
-        params = {"filter_id": FILTER_ACTIVITIES, "limit": 200}
-        if cursor:
-            params["cursor"] = cursor
-        resp = req.get(f"{BASE_V2}/activities",
-            params=params,
-            headers={"x-api-token": API_KEY},
-            timeout=30)
-        resp.raise_for_status()
-        data   = resp.json()
-        lote   = data.get("data") or []
-        for a in lote:
-            if str(a.get("due_date", ""))[:7] == mes_str:
-                todos.append(a)
-        cursor = data.get("additional_data", {}).get("next_cursor")
-        if not cursor or not lote:
-            break
-    return todos
+  // Ordena squads
+  const order = ['Sniper','Elite','Olympus','LATAM','Orion','Gerência'];
+  const squads = Object.keys(grupos).sort((a,b) => {
+    const ia = order.indexOf(a), ib = order.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b);
+  });
 
-def buscar_deals_rv(mes=None, ano=None):
-    """Busca deals com Reunião Validada? != Não e != No Show."""
-    deal_ids_validos = set()
-    mapa_owner = {}
-    start = 0
-    while True:
-        resp = req.get(f"{BASE_V1}/deals", params={
-            "filter_id": FILTER_DEALS_RV,
-            "status": "all_not_deleted",
-            "limit": 500,
-            "start": start,
-            "api_token": API_KEY,
-        }, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        lote = data.get("data") or []
-        for d in lote:
-            did = d["id"]
-            uid = d.get("user_id")
-            deal_ids_validos.add(did)
-            mapa_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
-        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
-        if not mais or not lote:
-            break
-        start += 500
-    return deal_ids_validos, mapa_owner
+  let html = '';
+  squads.forEach(squad => {
+    const membros = grupos[squad];
+    html += `<div class="squad-block">
+      <div class="squad-title">${squad}</div>
+      <table>
+        <thead>${cabecalhoTab()}</thead>
+        <tbody>`;
+    membros.forEach(p => { html += renderLinha(p); });
+    html += `</tbody></table></div>`;
+  });
 
-def cf(deal, key):
-    val = deal.get(key)
-    if val is None:
-        return None
-    if isinstance(val, dict):
-        return val.get("value") or val.get("label")
-    return val
+  c.innerHTML = html;
+}
 
-# ── CÁLCULO ──────────────────────────────────────────────────
-def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities):
+function cabecalhoTab() {
+  if (tabAtiva === 'sdrs') {
+    return `<tr>
+      <th style="width:200px">Nome</th>
+      <th>Role</th>
+      <th class="right">Reuniões</th>
+      <th class="right">Meta Reu</th>
+      <th class="right">% Reu</th>
+      <th class="right">Financeiro</th>
+      <th class="right">% Fin</th>
+      <th class="right col-ating">% Ating</th>
+      <th class="right">Aceler</th>
+      <th class="right">Ramp</th>
+      <th class="right">Comissão</th>
+      <th style="text-align:center">Eleg.</th>
+      <th>Status</th>
+      <th></th>
+    </tr>`;
+  } else if (tabAtiva === 'closers') {
+    return `<tr>
+      <th style="width:200px">Nome</th>
+      <th>Role</th>
+      <th class="right">Financeiro</th>
+      <th class="right">Meta Fin</th>
+      <th class="right">% Fin</th>
+      <th class="right col-ating">% Ating</th>
+      <th class="right">Aceler</th>
+      <th class="right">Ramp</th>
+      <th class="right">Comissão</th>
+      <th style="text-align:center">Eleg.</th>
+      <th>Status</th>
+      <th></th>
+    </tr>`;
+  } else {
+    return `<tr>
+      <th style="width:200px">Nome</th>
+      <th>Role</th>
+      <th>Tipo Cálculo</th>
+      <th class="right col-ating">% Ating</th>
+      <th class="right">Aceler</th>
+      <th class="right">Ramp</th>
+      <th class="right">Var OTE</th>
+      <th class="right">Comissão</th>
+      <th style="text-align:center">Eleg.</th>
+      <th>Status</th>
+      <th></th>
+    </tr>`;
+  }
+}
 
-    deals_ganhos = [
-        d for d in deals
-        if d.get("status") == "won" and str(cf(d, CF_QUALIFICADOR)) == str(qualificador_id)
-    ]
+function renderLinha(p) {
+  const hasAjuste = p.ajustes && p.ajustes.length > 0;
+  const cls = p.validado ? 'validado' : hasAjuste ? 'ajustado' : '';
+  const elegivel = (parseFloat(p.pct_atingimento)||0) >= 60;
+  const statusDot = p.validado ? 'dot-green' : hasAjuste ? 'dot-yellow' : 'dot-gray';
+  const statusTxt = p.validado ? 'Validado' : hasAjuste ? 'Ajustado' : 'Pendente';
+  const elegDot = elegivel
+    ? `<span class="dot dot-green" title="Elegível" style="box-shadow:0 0 0 2px #dcfce7"></span>`
+    : `<span class="dot" style="background:#d1d5db;opacity:.45" title="Não elegível"></span>`;
+  const comCls   = hasAjuste ? 'comval ajustado' : 'comval';
+  const valBtn   = p.validado ? '' : `<button class="act-btn green" onclick="validar('${p.nome_norm}',event)">✓</button>`;
 
-    valor_bruto = sum(float(d.get("value") or 0) for d in deals_ganhos)
-    valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
+  if (tabAtiva === 'sdrs') {
+    return `<tr class="${cls}" onclick="abrirModal('${p.nome_norm}')">
+      <td style="font-weight:500">${p.nome}</td>
+      <td>${roleBadge(p.role)}</td>
+      <td class="right">${p.reu_realizadas||0}</td>
+      <td class="right muted">${p.meta_reu||0}</td>
+      <td class="right"><span class="pct ${corPct(p.pct_reu)}">${fPct(p.pct_reu)}</span></td>
+      <td class="right">${fBRL(p.valor_ganho_multi)}</td>
+      <td class="right"><span class="pct ${corPct(p.pct_fin)}">${fPct(p.pct_fin)}</span></td>
+      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
+      <td class="right muted">x${p.acelerador||0}</td>
+      <td class="right muted">${fPct((p.rampagem||1)*100)}</td>
+      <td class="right"><span class="${comCls}">${fBRL(p.comissao_final)}</span></td>
+      <td style="text-align:center">${elegDot}</td>
+      <td><span class="dot ${statusDot}"></span>${statusTxt}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="act-btn" onclick="abrirAjuste('${p.nome_norm}')">✎</button>
+        ${valBtn}
+      </td>
+    </tr>`;
+  } else if (tabAtiva === 'closers') {
+    return `<tr class="${cls}" onclick="abrirModal('${p.nome_norm}')">
+      <td style="font-weight:500">${p.nome}</td>
+      <td>${roleBadge(p.role)}</td>
+      <td class="right">${fBRL(p.valor_ganho_multi)}</td>
+      <td class="right muted">${fBRL(p.meta_fin)}</td>
+      <td class="right"><span class="pct ${corPct(p.pct_fin)}">${fPct(p.pct_fin)}</span></td>
+      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
+      <td class="right muted">x${p.acelerador||0}</td>
+      <td class="right muted">${fPct((p.rampagem||1)*100)}</td>
+      <td class="right"><span class="${comCls}">${fBRL(p.comissao_final)}</span></td>
+      <td style="text-align:center">${elegDot}</td>
+      <td><span class="dot ${statusDot}"></span>${statusTxt}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="act-btn" onclick="abrirAjuste('${p.nome_norm}')">✎</button>
+        ${valBtn}
+      </td>
+    </tr>`;
+  } else {
+    return `<tr class="${cls}" onclick="abrirModal('${p.nome_norm}')">
+      <td style="font-weight:500">${p.nome}</td>
+      <td>${roleBadge(p.role)}</td>
+      <td class="muted" style="font-size:12px">${p.detalhes?.tipo_calculo||'—'}</td>
+      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
+      <td class="right muted">x${p.acelerador||0}</td>
+      <td class="right muted">${fPct((p.rampagem||1)*100)}</td>
+      <td class="right muted">${fBRL(p.ote?.variavel)}</td>
+      <td class="right"><span class="${comCls}">${fBRL(p.comissao_final)}</span></td>
+      <td style="text-align:center">${elegDot}</td>
+      <td><span class="dot ${statusDot}"></span>${statusTxt}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="act-btn" onclick="abrirAjuste('${p.nome_norm}')">✎</button>
+        ${valBtn}
+      </td>
+    </tr>`;
+  }
+}
 
-    # mes_atual já vem filtrado das activities
-    acts_sdr = [
-        a for a in activities
-        if str(a.get("owner_id")) == str(user_id)
-    ]
+function abrirModal(nome_norm) {
+  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
+  if (!p) return;
 
-    # Busca deals válidos (Reunião Validada? != Não e != No Show)
-    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+  document.getElementById('mTitle').textContent = p.nome;
+  document.getElementById('mSub').textContent = `${p.squad} · ${p.cargo} · ${p.detalhes?.tipo_calculo||''}`;
 
-    # Completa mapa_owner com deals ganhos do mês
-    for d in deals:
-        did = d["id"]
-        if did not in mapa_deal_owner:
-            uid = d.get("user_id")
-            mapa_deal_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
+  let h = '';
 
-    def valida(a):
-        if not (a.get("done") == True or a.get("status") == "done"):
-            return False
-        deal_id = a.get("deal_id")
-        # SDR não pode agendar reunião para si mesmo
-        act_owner  = str(a.get("owner_id", ""))
-        deal_owner = str(mapa_deal_owner.get(deal_id, "")) if deal_id else ""
-        if act_owner and deal_owner and act_owner == deal_owner:
-            return False
-        # Deal deve estar no filtro de reuniões válidas
-        if deal_id and deal_id not in deal_ids_validos:
-            return False
-        return True
+  // Fórmula
+  h += `<div class="msection"><h4>Composição da Comissão</h4><div class="formula">`;
+  if (p.role === 'sdr') {
+    h += `Ating <span class="op">=</span> <span class="hl">70%</span> × <span class="hl">${fPct(p.pct_reu)}</span> <span class="op">+</span> <span class="hl">30%</span> × <span class="hl">${fPct(p.pct_fin)}</span> <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
+  } else if (p.role === 'head') {
+    h += `Ating <span class="op">=</span> <span class="hl">50%</span> × <span class="hl">${fPct(p.pct_closer)}</span> <span class="op">(closer)</span> <span class="op">+</span> <span class="hl">50%</span> × <span class="hl">${fPct(p.pct_sdr)}</span> <span class="op">(sdr)</span> <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
+  } else if (p.role === 'lider_sdr') {
+    h += `Ating <span class="op">=</span> <span class="hl">70%</span> × <span class="hl">${fPct(p.pct_reu)}</span> <span class="op">(reu time)</span> <span class="op">+</span> <span class="hl">30%</span> × <span class="hl">${fPct(p.pct_fin)}</span> <span class="op">(fin time)</span> <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
+  } else if (p.tipo === 'vp') {
+    h += `VP Total <span class="op">=</span> <span class="hl">${fBRL(p.valor_presente)}</span> · % Comissão <span class="op">=</span> <span class="hl">${fPct(p.pct_comissao_vp)}</span>\n`;
+    h += `Comissão <span class="op">=</span> <span class="hl">${fBRL(p.valor_presente)}</span> × <span class="hl">${fPct(p.pct_comissao_vp)}</span> × <span class="hl">${fPct((p.rampagem||1)*100)}</span> <span class="op">=</span> <span class="res">${fBRL(p.comissao_calc)}</span>`;
+    h += `</div></div>`;
+    // Pula para KPIs direto
+    h += buildKVSection(p) + buildAjustesSection(p) + buildStatusSection(p);
+    document.getElementById('mBody').innerHTML = h;
+    document.getElementById('overlay').classList.add('open');
+    return;
+  } else {
+    h += `Ating <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
+  }
+  if (p.tipo !== 'vp') {
+    h += `Comissão <span class="op">=</span> <span class="hl">${fBRL(p.ote?.variavel||0)}</span> × <span class="hl">${fPct(p.pct_atingimento)}</span> × <span class="hl">x${p.acelerador||0}</span> × <span class="hl">${fPct((p.rampagem||1)*100)}</span> <span class="op">=</span> <span class="res">${fBRL(p.comissao_calc)}</span>`;
+  }
+  h += `</div></div>`;
+  h += buildKVSection(p) + buildAjustesSection(p) + buildStatusSection(p);
 
-    def eh_desq(a):
-        if not (a.get("done") == True or a.get("status") == "done"):
-            return False
-        deal_id = a.get("deal_id")
-        if not deal_id:
-            return False
-        return deal_id not in deal_ids_validos
+  document.getElementById('mBody').innerHTML = h;
+  document.getElementById('overlay').classList.add('open');
+}
 
-    reu_realizadas = [a for a in acts_sdr if valida(a)]
-    reu_desq       = [a for a in acts_sdr if eh_desq(a)]
+function buildKVSection(p) {
+  const items = [];
+  if (p.role === 'sdr') {
+    items.push(['Reuniões',p.reu_realizadas||0],['Meta Reu',p.meta_reu||0],
+      ['% Reu',fPct(p.pct_reu)],['Financeiro',fBRL(p.valor_ganho_multi)],
+      ['Meta Fin',fBRL(p.meta_fin)],['% Fin',fPct(p.pct_fin)]);
+  } else if (p.role === 'lider_sdr') {
+    items.push(['Reu Time',p.t_reu_val||0],['Meta Reu Time',p.t_meta_reu||0],
+      ['Fin Time',fBRL(p.t_fin_val)],['Meta Fin Time',fBRL(p.t_meta_fin)]);
+  } else if (p.tipo === 'vp') {
+    items.push(['Fin (multi)',fBRL(p.valor_ganho_multi)],['Valor Presente',fBRL(p.valor_presente)],
+      ['Meta Fin',fBRL(p.meta_fin)],['% Comissão VP',fPct(p.pct_comissao_vp)]);
+  } else if (p.role === 'head') {
+    items.push(['% Closer',fPct(p.pct_closer)],['% SDR',fPct(p.pct_sdr)]);
+  } else {
+    items.push(['Fin (multi)',fBRL(p.valor_ganho_multi)],['Meta Fin',fBRL(p.meta_fin)]);
+  }
+  items.push(
+    ['OTE Fixo',fBRL(p.ote?.fixo)],['OTE Variável',fBRL(p.ote?.variavel)],
+    ['Acelerador',`x${p.acelerador||0}`],['Rampagem',fPct((p.rampagem||1)*100)],
+    ['Comissão Calc.',fBRL(p.comissao_calc)],['Comissão Final',fBRL(p.comissao_final)],
+  );
+  let h = `<div class="msection"><h4>Números do Período</h4><div class="kv-grid">`;
+  items.forEach(([k,v]) => {
+    h += `<div class="kv-item"><div class="kv-key">${k}</div><div class="kv-val">${v}</div></div>`;
+  });
+  return h + `</div></div>`;
+}
 
-    qtd_agendadas  = len(acts_sdr)
-    qtd_realizadas = len(reu_realizadas)
+function buildAjustesSection(p) {
+  if (!p.ajustes || !p.ajustes.length) return '';
+  let h = `<div class="msection"><h4>Histórico de Ajustes</h4>`;
+  p.ajustes.forEach(aj => {
+    h += `<div class="ajlog">
+      <div class="ajl-header">${aj.data} · ${aj.campo}</div>
+      <div class="ajl-text">${aj.valor_anterior} → ${aj.valor_novo}</div>
+      <div class="ajl-motivo">Motivo: ${aj.motivo}</div>
+    </div>`;
+  });
+  return h + `</div>`;
+}
 
-    pct_reu = (qtd_realizadas / metas["meta_reu"]) if metas["meta_reu"] > 0 else 0
-    pct_fin = (valor_multi / metas["meta_fin"])    if metas["meta_fin"] > 0 else 0
-    ating   = (pct_reu * 0.7 + pct_fin * 0.3) * 100
+function buildStatusSection(p) {
+  if (p.validado) {
+    return `<div class="msection"><h4>Status</h4><p style="color:#1a7f4b;font-size:13px">✓ Validado em ${p.validado_em}</p></div>`;
+  }
+  return `<div class="msection"><h4>Status</h4>
+    <button class="btn btn-green" onclick="validar('${p.nome_norm}',null);closeModal()">✓ Marcar como Validado</button>
+  </div>`;
+}
 
-    acel     = acelerador(ating)
-    comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+}
 
-    dp = dias_uteis_passados()
-    du = metas["dias_uteis"]
-    proj_fin      = (valor_multi / dp) * du
-    proj_reu      = (qtd_realizadas / dp) * du
-    pct_proj_fin  = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
-    pct_proj_reu  = (proj_reu / metas["meta_reu"] * 100)  if metas["meta_reu"] > 0 else 0
-    ating_proj    = (pct_proj_reu * 0.7 + pct_proj_fin * 0.3)
-    acel_proj     = acelerador(ating_proj)
-    comissao_proj = ote["variavel"] * (ating_proj / 100) * metas["rampagem"] * acel_proj
+function abrirAjuste(nome_norm) {
+  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
+  if (!p) return;
+  ajNomeNorm = nome_norm;
 
-    def serie_acts(lista):
-        mapa = {}
-        for a in lista:
-            dt = str(a.get("due_date", ""))[:10]
-            if dt:
-                mapa[dt] = mapa.get(dt, 0) + 1
-        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
+  document.getElementById('mTitle').textContent = p.nome + ' — Ajuste Manual';
+  document.getElementById('mSub').textContent = `${p.squad} · ${p.cargo}`;
 
-    def serie_deals(lista):
-        mapa = {}
-        for d in lista:
-            dt = str(d.get("won_time", ""))[:10]
-            if dt:
-                v = float(cf(d, CF_MULTIPLICADOR) or 0)
-                mapa[dt] = mapa.get(dt, 0) + v
-        return [{"data": k, "valor": v} for k, v in sorted(mapa.items())]
+  document.getElementById('mBody').innerHTML = `
+    <div class="ajform">
+      <label class="flabel">Campo</label>
+      <select class="fselect" id="ajCampo" onchange="syncValAtual('${nome_norm}')">
+        <option value="pct_atingimento">% Atingimento</option>
+        <option value="comissao_final">Comissão Final (valor direto)</option>
+        <option value="rampagem">Rampagem (0–1, ex: 0.75)</option>
+        <option value="acelerador">Acelerador (ex: 0.7)</option>
+      </select>
+      <label class="flabel">Valor atual</label>
+      <input class="finput" id="ajAtual" readonly style="opacity:.5;margin-bottom:12px">
+      <label class="flabel">Novo valor</label>
+      <input class="finput" type="number" id="ajNovo" step="0.01">
+      <label class="flabel">Motivo (obrigatório)</label>
+      <input class="finput" type="text" id="ajMotivo" placeholder="Ex: Acordo aprovado pela gestão">
+      <div class="factions">
+        <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-red" onclick="confirmarAjuste()">Aplicar</button>
+      </div>
+    </div>`;
 
-    proximas = sorted(
-        [a for a in acts_sdr if not (a.get("done") or a.get("status") == "done")],
-        key=lambda a: (a.get("due_date", ""), a.get("due_time", "") or "")
-    )[:10]
+  document.getElementById('overlay').classList.add('open');
+  syncValAtual(nome_norm);
+}
 
-    foto = url_foto(nome)
+function syncValAtual(nome_norm) {
+  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
+  if (!p) return;
+  const campo = document.getElementById('ajCampo').value;
+  document.getElementById('ajAtual').value = p[campo] ?? '—';
+}
 
-    return {
-        "colaborador": {**colaborador, "foto": foto},
-        "metas":       metas,
-        "ote":         ote,
-        "kpis": {
-            "reunioesAgendadas":  qtd_agendadas,
-            "reunioesRealizadas": qtd_realizadas,
-            "pctMetaReu":         arred(pct_reu * 100),
-            "valorBruto":         arred(valor_bruto),
-            "valorMultiplicador": arred(valor_multi),
-            "pctMetaFin":         arred(pct_fin * 100),
-            "pctDesqualificacao": arred(len(reu_desq) / qtd_realizadas * 100) if qtd_realizadas else 0,
-        },
-        "comissao": {
-            "atingimento":   arred(ating),
-            "acelerador":    acel,
-            "estimada":      arred(comissao),
-            "comissionando": ating >= 60,
-            "projecao": {
-                "valorFin":    arred(proj_fin),
-                "qtdReu":      arred(proj_reu),
-                "atingimento": arred(ating_proj),
-                "estimada":    arred(comissao_proj),
-            }
-        },
-        "graficos": {
-            "serieAgendadas":  serie_acts(acts_sdr),
-            "serieRealizadas": serie_acts(reu_realizadas),
-            "serieValores":    serie_deals(deals_ganhos),
-        },
-        "tabelas": {
-            "proximasReunioes": [{"deal_id": a.get("deal_id"), "nome": a.get("subject", ""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in proximas],
-            "reunioesGanhas":   [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time", ""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0)} for d in deals_ganhos],
-            "reunioesDesq": [{
-                "deal_id":      a.get("deal_id"),
-                "proprietario": next((d.get("owner_name") or (d.get("user_id") or {}).get("name","") for d in deals if d["id"] == a.get("deal_id")), "--")
-            } for a in reu_desq[:10]],
-        },
-        "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+async function confirmarAjuste() {
+  const motivo = document.getElementById('ajMotivo').value.trim();
+  if (!motivo) { toast('Informe o motivo', 'warn'); return; }
+  const campo  = document.getElementById('ajCampo').value;
+  const valor  = parseFloat(document.getElementById('ajNovo').value);
+  if (isNaN(valor)) { toast('Valor inválido', 'warn'); return; }
+  const {mes,ano} = getMesAno();
+  showLoader('Salvando ajuste...');
+  try {
+    const r = await fetch('/api/ajuste', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({mes,ano,nome_norm:ajNomeNorm,campo,valor,motivo}),
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    dados = d.data;
+    atualizarStats(); renderTab();
+    toast('Ajuste aplicado!', 'ok');
+    closeModal();
+  } catch(e) { toast('Erro: '+e.message,'err'); }
+  finally { hideLoader(); }
+}
+
+async function validar(nome_norm, ev) {
+  if (ev) ev.stopPropagation();
+  const {mes,ano} = getMesAno();
+  try {
+    const r = await fetch('/api/validar',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mes,ano,nome_norm}),
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    const p = dados?.pessoas?.find(x=>x.nome_norm===nome_norm);
+    if (p) { p.validado=true; p.validado_em=new Date().toLocaleString('pt-BR'); }
+    atualizarStats(); renderTab();
+    toast('Validado!','ok');
+  } catch(e) { toast('Erro: '+e.message,'err'); }
+}
+
+async function salvar() {
+  if (!dados) { toast('Sem dados','warn'); return; }
+  showLoader('Salvando...');
+  try {
+    const r = await fetch('/api/salvar',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(dados),
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    toast('Período salvo!','ok');
+  } catch(e) { toast('Erro: '+e.message,'err'); }
+  finally { hideLoader(); }
+}
+
+function exportar() {
+  const {mes,ano} = getMesAno();
+  window.location.href = `/api/exportar?mes=${mes}&ano=${ano}`;
+}
+
+
+function renderBonus() {
+  const cont = document.getElementById('tabContent');
+  const busca = document.getElementById('search').value.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  let ps = (dados.pessoas||[])
+    .filter(p => !excluido(p))
+    .filter(p => !['lider_sdr','head','gerente'].includes(p.role))
+    .filter(p => (parseFloat(p.pct_atingimento)||0) > 69.9999);
+  if (busca) ps = ps.filter(p =>
+    (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(busca) ||
+    (p.squad||'').toLowerCase().includes(busca)
+  );
+  document.getElementById('countLabel').textContent = ps.length + ' elegível(is)';
+  if (!ps.length) {
+    cont.innerHTML = '<div class="empty">Nenhuma pessoa elegível ao bônus (atingimento > 70%).</div>';
+    return;
+  }
+  // Ordena por atingimento desc
+  ps = [...ps].sort((a,b) => (parseFloat(b.pct_atingimento)||0) - (parseFloat(a.pct_atingimento)||0));
+
+  let html = `<div class="squad-block"><table>
+    <thead><tr>
+      <th style="width:200px">Nome</th>
+      <th>Equipe</th>
+      <th>Role</th>
+      <th class="right col-ating">% Atingimento</th>
+      <th class="right">Bônus</th>
+      <th></th>
+    </tr></thead><tbody>`;
+
+  ps.forEach(p => {
+    const bonus = p.bonus || '';
+    const bonusSaved = bonus !== '' ? 'bonus-saved' : '';
+    html += `<tr>
+      <td style="font-weight:500">${p.nome}</td>
+      <td>${p.squad||'—'}</td>
+      <td>${roleBadge(p.role)}</td>
+      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
+      <td class="right">
+        <input class="bonus-input ${bonusSaved}" type="number" min="0" step="0.01"
+          placeholder="R$ 0,00"
+          value="${bonus}"
+          data-norm="${p.nome_norm}"
+          onchange="salvarBonus('${p.nome_norm}', this)"
+          onblur="salvarBonus('${p.nome_norm}', this)">
+      </td>
+      <td style="font-size:11px;color:#aaa">${p.bonus_obs||''}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>
+    <div style="margin-top:16px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;font-weight:500;color:#166534">Total Bônus</span>
+      <span style="font-size:16px;font-weight:600;color:#166534;font-variant-numeric:tabular-nums" id="totalBonus">${fBRL(ps.reduce((s,p)=>s+(parseFloat(p.bonus)||0),0))}</span>
+    </div>
+  </div>`;
+  cont.innerHTML = html;
+}
+
+function salvarBonus(nome_norm, input) {
+  const valor = parseFloat(input.value) || 0;
+  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
+  if (!p) return;
+  p.bonus = valor;
+  input.classList.add('bonus-saved');
+  // Atualiza total
+  const total = (dados.pessoas||[]).reduce((s,x)=>s+(parseFloat(x.bonus)||0),0);
+  const el = document.getElementById('totalBonus');
+  if (el) el.textContent = fBRL(total);
+}
+
+
+function renderMDO() {
+  const cont = document.getElementById('tabContent');
+  const busca = document.getElementById('search').value.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+  // Todos exceto "Inteligência Comercial" e "LIC" e "Farias Souza" — já filtrado por excluido()
+  // Mas na MDO mostramos TODOS (inclusive liderança), exceto os excluídos
+  let ps = (dados.pessoas||[]).filter(p => !excluido(p));
+  if (busca) ps = ps.filter(p =>
+    (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(busca) ||
+    (p.squad||'').toLowerCase().includes(busca)
+  );
+
+  const squadOrder = ['Sniper','Elite','Olympus','LATAM','Orion','Gerência'];
+  const roleOrder  = {gerente:0,head:1,lider_sdr:2,closer:3,inside:3,sdr:4};
+  ps = [...ps].sort((a,b)=>{
+    const si=squadOrder.indexOf(a.squad||''), sj=squadOrder.indexOf(b.squad||'');
+    const sc=(si===-1&&sj===-1)?(a.squad||'').localeCompare(b.squad||''):(si===-1?1:sj===-1?-1:si-sj);
+    if(sc!==0) return sc;
+    return (roleOrder[a.role]??5)-(roleOrder[b.role]??5);
+  });
+
+  document.getElementById('countLabel').textContent = ps.length + ' pessoa(s)';
+
+  const {mes,ano} = getMesAno();
+  const MESES_NOME=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const du = dados.du_total||'—';
+
+  // Agrega por squad para linha de total por time
+  // squad -> { tt, vendas_closers }
+  const squadAgg = {};
+  ps.forEach(p => {
+    const sq = p.squad||'—';
+    if (!squadAgg[sq]) squadAgg[sq] = {tt:0, vendas:0};
+    const fp = parseFloat(p.flash_premiacao)||0;
+    const ff = parseFloat(p.flash_fixo)||0;
+    const tt = (p.ote?.fixo||0)+(p.comissao_final||0)+(p.bonus||0)+fp+ff;
+    squadAgg[sq].tt += tt;
+    // Só closer/inside contribuem para o denominador do MDO
+    if (['closer','inside'].includes(p.role)) {
+      squadAgg[sq].vendas += (p.valor_ganho_multi||0);
     }
+  });
+
+  // Virtuais: Time Aquisição e Time Inteligência
+  const virtuais = [
+    {key:'aquisicao',   label:'Time Aquisição'},
+    {key:'inteligencia',label:'Time de Inteligência'},
+  ];
+
+  let html = `<div class="mdo-wrap"><table class="mdo-table">
+    <colgroup>
+      <col style="width:38px"><col style="width:52px"><col style="width:36px">
+      <col style="width:130px"><col style="width:70px"><col style="width:80px">
+      <col style="width:90px"><col style="width:72px"><col style="width:72px">
+      <col style="width:80px"><col style="width:72px">
+      <col style="width:80px"><col style="width:72px">
+      <col style="width:88px"><col style="width:88px">
+      <col style="width:82px">
+      <col style="width:62px">
+      <col style="width:110px">
+    </colgroup>
+    <thead><tr>
+      <th>Ano</th><th>Mês</th><th class="right">DU</th>
+      <th>Nome</th><th>Subárea</th><th class="right">Meta Fin.</th>
+      <th>Cargo</th><th class="right">OTE Fx</th><th class="right">OTE Vr</th>
+      <th class="right">Vendas</th><th class="right">Fixo R.</th>
+      <th class="right">Var. R.</th><th class="right">Bônus</th>
+      <th class="right">Flash P.</th><th class="right">Flash Fx</th>
+      <th class="right bold-col">TT</th>
+      <th class="right col-ating">MDO%</th>
+      <th>Obs.</th>
+    </tr></thead><tbody>`;
+
+  // Rows por squad
+  const squadsUsados = [...new Set(ps.map(p=>p.squad||'—'))].sort((a,b)=>{
+    const si=squadOrder.indexOf(a),sj=squadOrder.indexOf(b);
+    return(si===-1&&sj===-1)?a.localeCompare(b):(si===-1?1:sj===-1?-1:si-sj);
+  });
+
+  let gtVendas=0,gtFixo=0,gtVar=0,gtBonus=0,gtFP=0,gtFF=0,gtTT=0,gtVendasCloser=0;
+
+  squadsUsados.forEach(sq => {
+    const membros = ps.filter(p=>(p.squad||'—')===sq);
+    const agg = squadAgg[sq]||{tt:0,vendas:0};
+    const mdoTime = agg.vendas>0 ? agg.tt/agg.vendas*100 : null;
+
+    membros.forEach(p => {
+      const isCLoser = ['closer','inside'].includes(p.role);
+      const isLider  = ['lider_sdr','head','gerente'].includes(p.role);
+      const fixoR = p.ote?.fixo||0;
+      const varR  = p.comissao_final||0;
+      const bonP  = p.bonus||0;
+      const fpV   = parseFloat(p.flash_premiacao)||0;
+      const ffV   = parseFloat(p.flash_fixo)||0;
+      const tt    = fixoR+varR+bonP+fpV+ffV;
+      const venda = p.valor_ganho_multi||0;
+      const mdoP  = isCLoser && venda>0 ? tt/venda*100 : null;
+
+      gtVendas+=venda; gtFixo+=fixoR; gtVar+=varR;
+      gtBonus+=bonP; gtFP+=fpV; gtFF+=ffV; gtTT+=tt;
+      if(isCLoser) gtVendasCloser+=venda;
+
+      const fp_val = p.flash_premiacao||'';
+      const ff_val = p.flash_fixo||'';
+      const obs    = (p.mdo_obs||'').replace(/"/g,'&quot;');
+      const rowcls = isLider?'lider-row':'';
+
+      html+=`<tr class="${rowcls}">
+        <td class="muted">${ano}</td>
+        <td class="muted">${MESES_NOME[mes]}</td>
+        <td class="right muted">${du}</td>
+        <td class="bold-col">${p.nome}</td>
+        <td>${sq}</td>
+        <td class="right">${fBRL(p.meta_fin||0)}</td>
+        <td style="font-size:11px">${p.cargo||'—'}</td>
+        <td class="right">${fBRL(fixoR)}</td>
+        <td class="right">${fBRL(p.ote?.variavel||0)}</td>
+        <td class="right">${venda>0?fBRL(venda):'<span class="muted">—</span>'}</td>
+        <td class="right">${fBRL(fixoR)}</td>
+        <td class="right">${fBRL(varR)}</td>
+        <td class="right">${bonP>0?fBRL(bonP):'<span class="muted">—</span>'}</td>
+        <td class="right">
+          <input class="mdo-input ${fpV>0?'filled':''}" type="number" min="0" step="0.01"
+            placeholder="—" value="${fp_val}"
+            onblur="salvarMdoField('${p.nome_norm}','flash_premiacao',this)">
+        </td>
+        <td class="right">
+          <input class="mdo-input ${ffV>0?'filled':''}" type="number" min="0" step="0.01"
+            placeholder="—" value="${ff_val}"
+            onblur="salvarMdoField('${p.nome_norm}','flash_fixo',this)">
+        </td>
+        <td class="right bold-col">${fBRL(tt)}</td>
+        <td class="col-ating">${mdoP!==null?`<span class="pct ${corPct(mdoP)}">${fPct(mdoP)}</span>`:'<span class="muted" style="font-size:11px">—</span>'}</td>
+        <td>
+          <input class="mdo-obs ${obs?'filled':''}" type="text"
+            placeholder="Obs..." value="${obs}"
+            onblur="salvarMdoField('${p.nome_norm}','mdo_obs',this)">
+        </td>
+      </tr>`;
+    });
+
+    // Linha de total por time
+    html+=`<tr style="background:#f0f0ec;border-top:1px solid #d8d8d4">
+      <td colspan="9" style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#555;text-align:right;padding:7px 10px">MDO ${sq}</td>
+      <td class="right" style="font-weight:600;font-size:11px">${fBRL(agg.vendas)}</td>
+      <td colspan="5"></td>
+      <td class="right" style="font-weight:600;font-size:11px">${fBRL(agg.tt)}</td>
+      <td class="col-ating" style="font-weight:700">${mdoTime!==null?`<span class="pct ${corPct(mdoTime)}">${fPct(mdoTime)}</span>`:'<span class="muted">—</span>'}</td>
+      <td></td>
+    </tr>`;
+  });
+
+  // Linhas virtuais
+  virtuais.forEach(v => {
+    const fpV = parseFloat(dados[v.key+'_flash_p'])||0;
+    const ffV = parseFloat(dados[v.key+'_flash_f'])||0;
+    const obs = (dados[v.key+'_obs']||'').replace(/"/g,'&quot;');
+    const tt  = fpV+ffV+(parseFloat(dados[v.key+'_fixo'])||0)+(parseFloat(dados[v.key+'_var'])||0);
+    html+=`<tr style="background:#fafaf8">
+      <td class="muted">${ano}</td>
+      <td class="muted">${MESES_NOME[mes]}</td>
+      <td class="right muted">${du}</td>
+      <td class="bold-col" style="font-style:italic">${v.label}</td>
+      <td class="muted">—</td>
+      <td class="right">
+        <input class="mdo-input ${dados[v.key+'_meta']?'filled':''}" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_meta']||''}"
+          onblur="salvarVirtual('${v.key}','meta',this)">
+      </td>
+      <td class="muted" style="font-size:11px">—</td>
+      <td class="right">
+        <input class="mdo-input ${dados[v.key+'_fixo']?'filled':''}" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_fixo']||''}"
+          onblur="salvarVirtual('${v.key}','fixo',this)">
+      </td>
+      <td class="right">
+        <input class="mdo-input ${dados[v.key+'_var']?'filled':''}" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_var']||''}"
+          onblur="salvarVirtual('${v.key}','var',this)">
+      </td>
+      <td class="muted center">—</td>
+      <td class="right">
+        <input class="mdo-input" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_fixo_r']||''}"
+          onblur="salvarVirtual('${v.key}','fixo_r',this)">
+      </td>
+      <td class="right">
+        <input class="mdo-input" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_var_r']||''}"
+          onblur="salvarVirtual('${v.key}','var_r',this)">
+      </td>
+      <td class="right">
+        <input class="mdo-input" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_bonus']||''}"
+          onblur="salvarVirtual('${v.key}','bonus',this)">
+      </td>
+      <td class="right">
+        <input class="mdo-input ${fpV>0?'filled':''}" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_flash_p']||''}"
+          onblur="salvarVirtual('${v.key}','flash_p',this)">
+      </td>
+      <td class="right">
+        <input class="mdo-input ${ffV>0?'filled':''}" type="number" min="0" step="0.01"
+          placeholder="—" value="${dados[v.key+'_flash_f']||''}"
+          onblur="salvarVirtual('${v.key}','flash_f',this)">
+      </td>
+      <td class="right bold-col">${tt>0?fBRL(tt):'<span class="muted">—</span>'}</td>
+      <td class="col-ating muted">—</td>
+      <td>
+        <input class="mdo-obs ${obs?'filled':''}" type="text"
+          placeholder="Obs..." value="${obs}"
+          onblur="salvarVirtual('${v.key}','obs',this)">
+      </td>
+    </tr>`;
+  });
+
+  // Grand total
+  const gtMdo = gtVendasCloser>0 ? gtTT/gtVendasCloser*100 : null;
+  html+=`<tr class="mdo-total-row">
+    <td colspan="9" style="text-align:right;font-size:10px;letter-spacing:.08em">TOTAL GERAL</td>
+    <td class="right">${fBRL(gtVendasCloser)}</td>
+    <td class="right">${fBRL(gtFixo)}</td>
+    <td class="right">${fBRL(gtVar)}</td>
+    <td class="right">${fBRL(gtBonus)}</td>
+    <td class="right">${fBRL(gtFP)}</td>
+    <td class="right">${fBRL(gtFF)}</td>
+    <td class="right">${fBRL(gtTT)}</td>
+    <td class="col-ating">${gtMdo!==null?`<span style="color:#FFD700;font-weight:700">${fPct(gtMdo)}</span>`:'—'}</td>
+    <td></td>
+  </tr>`;
+
+  html+=`</tbody></table></div>`;
+  cont.innerHTML = html;
+}
+
+function salvarVirtual(key, campo, input) {
+  const val = input.value;
+  dados[key+'_'+campo] = val;
+  input.classList.toggle('filled', val!==''&&val!=='0');
+  renderMDO();
+}
 
 
+function salvarMdoField(nome_norm, campo, input) {
+  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
+  if (!p) return;
+  const val = input.value;
+  p[campo] = campo === 'mdo_obs' ? val : (parseFloat(val)||0);
+  input.classList.toggle('filled', val !== '' && val !== '0');
+  // Recalcula TT na linha (não re-renderiza tudo)
+  if (campo !== 'mdo_obs') renderMDO();
+}
 
-def is_closer(cargo):
-    """Retorna True se o cargo é Closer."""
-    return "closer" in norm(cargo)
-
-def buscar_referidos():
-    """Busca deals do filtro de referidos (mês atual)."""
-    todos, start = [], 0
-    mes_atual = date.today().strftime("%Y-%m")
-    while True:
-        resp = req.get(f"{BASE_V1}/deals", params={
-            "filter_id": FILTER_REFERIDOS,
-            "limit": 500,
-            "start": start,
-            "api_token": API_KEY
-        }, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        lote = data.get("data") or []
-        for d in lote:
-            add_time = str(d.get("add_time", ""))[:7]
-            if add_time == mes_atual:
-                todos.append(d)
-        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
-        if not mais or not lote:
-            break
-        start += 500
-    return todos
-
-# ── CÁLCULO CLOSER ───────────────────────────────────────────
-def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos):
-    hoje      = date.today()
-    mes_atual = hoje.strftime("%Y-%m")
-
-    # Deals ganhos onde ele é proprietário
-    deals_ganhos = [
-        d for d in deals
-        if d.get("status") == "won"
-        and str((d.get("user_id") or {}).get("id") if isinstance(d.get("user_id"), dict) else d.get("user_id")) == str(user_id)
-    ]
-
-    valor_bruto = sum(float(d.get("value") or 0) for d in deals_ganhos)
-    valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
-
-    # Mapa deal_id -> "Reunião Validada?"
-    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
-
-    # Achar user_id do Matheus Paz
-    users_pipe = buscar_users()
-    matheus_id = str(next((uid for uid, uname in users_pipe.items() if norm(uname) == norm("Matheus Paz")), ""))
-
-    # Times Inside Sales — podem agendar para si mesmos
-    TIMES_INSIDE_SALES = ["orion", "latam"]
-    is_inside_sales = norm(colaborador.get("time", "")) in TIMES_INSIDE_SALES
-
-    # Activities do mês onde o closer é owner do DEAL (não da activity)
-    acts_closer = [
-        a for a in activities
-        if str(a.get("due_date", ""))[:7] == mes_atual
-        and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
-        and (is_inside_sales or str(a.get("owner_id", "")) != str(user_id))
-        and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
-    ]
-
-    # Realizadas = done
-    reu_realizadas = [
-        a for a in acts_closer
-        if a.get("done") == True or a.get("status") == "done"
-    ]
-
-    # Validadas = realizadas + Reunião Validada? = Sim
-    reu_validadas = [
-        a for a in reu_realizadas
-        if a.get("deal_id") and a.get("deal_id") in deal_ids_validos
-    ]
-
-    qtd_realizadas = len(reu_realizadas)
-    qtd_validadas  = len(reu_validadas)
-    pct_validadas  = arred(qtd_validadas / qtd_realizadas * 100) if qtd_realizadas else 0
-
-    # Referidos do mês onde ele é proprietário
-    refs_closer = [
-        d for d in referidos
-        if str((d.get("user_id") or {}).get("id") if isinstance(d.get("user_id"), dict) else d.get("user_id")) == str(user_id)
-    ]
-
-    # % Meta financeira
-    pct_fin = (valor_multi / metas["meta_fin"]) if metas["meta_fin"] > 0 else 0
-    ating   = pct_fin * 100
-
-    acel     = acelerador(ating)
-    comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
-
-    # Projeção
-    dp = dias_uteis_passados()
-    du = metas["dias_uteis"]
-    proj_fin     = (valor_multi / dp) * du
-    pct_proj_fin = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
-    acel_proj    = acelerador(pct_proj_fin)
-    comissao_proj = ote["variavel"] * (pct_proj_fin / 100) * metas["rampagem"] * acel_proj
-
-    def serie_acts(lista):
-        mapa = {}
-        for a in lista:
-            dt = str(a.get("due_date", ""))[:10]
-            if dt:
-                mapa[dt] = mapa.get(dt, 0) + 1
-        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
-
-    def serie_deals(lista):
-        mapa = {}
-        for d in lista:
-            dt = str(d.get("won_time", ""))[:10]
-            if dt:
-                v = float(cf(d, CF_MULTIPLICADOR) or 0)
-                mapa[dt] = mapa.get(dt, 0) + v
-        return [{"data": k, "valor": v} for k, v in sorted(mapa.items())]
-
-    def serie_referidos(lista):
-        mapa = {}
-        for d in lista:
-            dt = str(d.get("add_time", ""))[:10]
-            if dt:
-                mapa[dt] = mapa.get(dt, 0) + 1
-        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
-
-    def owner_name(d):
-        uid = d.get("user_id")
-        if isinstance(uid, dict):
-            return uid.get("name", "--")
-        return "--"
-
-    foto = url_foto(nome)
-
-    return {
-        "tipo": "closer",
-        "colaborador": {**colaborador, "foto": foto},
-        "metas": metas,
-        "ote":   ote,
-        "kpis": {
-            "reunioesRealizadas": qtd_realizadas,
-            "reunioesValidadas":  qtd_validadas,
-            "pctValidadas":       pct_validadas,
-            "valorBruto":         arred(valor_bruto),
-            "valorMultiplicador": arred(valor_multi),
-            "pctMetaFin":         arred(pct_fin * 100),
-            "volumeReferidos":    len(refs_closer),
-        },
-        "comissao": {
-            "atingimento":   arred(ating),
-            "acelerador":    acel,
-            "estimada":      arred(comissao),
-            "comissionando": ating >= 60,
-            "projecao": {
-                "valorFin":    arred(proj_fin),
-                "atingimento": arred(pct_proj_fin),
-                "estimada":    arred(comissao_proj),
-            }
-        },
-        "graficos": {
-            "serieRealizadas": serie_acts(reu_realizadas),
-            "serieValores":    serie_deals(deals_ganhos),
-            "serieReferidos":  serie_referidos(refs_closer),
-        },
-        "tabelas": {
-            "reunioesRealizadas": [{"deal_id": a.get("deal_id"), "nome": a.get("subject",""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in reu_realizadas],
-            "ganhos": [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in deals_ganhos],
-            "referidos": [{"deal_id": d["id"], "nome": d.get("title"), "data_criacao": str(d.get("add_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in refs_closer],
-        },
-        "tabela_price_url": TABELA_PRICE_URL,
-        "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-    }
-
-# ── COMISSÃO ────────────────────────────────────────────────
-def buscar_comissoes(nome):
-    df = ler_sheet(URL_COMISSOES)
-    df.columns = [c.strip() for c in df.columns]
-    registros = []
-    for _, row in df.iterrows():
-        if norm(str(row.get("Nome", ""))) != norm(nome):
-            continue
-        registros.append({
-            "ano":            str(row.get("Ano", "")),
-            "mes":            str(row.get("Mês", row.get("Mes", ""))),
-            "nivel":          str(row.get("Nível", row.get("Nivel", ""))),
-            "vol_reuniao":    str(row.get("Vol. Reunião", row.get("Vol. Reuniao", ""))),
-            "valor_financeiro": str(row.get("Valor Financeiro", "")),
-            "pct_reuniao":    str(row.get("% Reunião", row.get("% Reuniao", ""))),
-            "pct_financeiro": str(row.get("% Financeiro", "")),
-            "pct_meta_final": str(row.get("% Meta Final", "")),
-            "elegivel":       str(row.get("Elegível?", row.get("Elegivel?", ""))),
-            "acelerador":     str(row.get("Acelerador OTE", "")),
-            "variavel_ote":   str(row.get("Variável OTE", row.get("Variavel OTE", ""))),
-            "rampagem":       str(row.get("Rampagem (OTE)", "")),
-            "comissao":       str(row.get("Comissão", row.get("Comissao", ""))),
-            "confirmacao":    str(row.get("Confirmação", row.get("Confirmacao", ""))).strip(),
-        })
-    # Ordem: mais recente primeiro
-    registros.sort(key=lambda r: (r["ano"], r["mes"].zfill(2)), reverse=True)
-    return registros
-
-def gravar_confirmacao(nome, ano, mes):
-    import gspread
-    # Fallback: usar requests para atualizar via Sheets API não disponível sem OAuth
-    # Usamos uma abordagem alternativa: webhook para um Google Apps Script
-    # Por ora, retorna erro indicando que precisa configurar o Apps Script
-    return False, "Configure o endpoint de gravação"
-
-
-@app.route("/api/comissao/confirmar", methods=["POST"])
-def api_confirmar_comissao():
-    if "nome" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
-    nome = session["nome"]
-    body = request.get_json()
-    ano   = str(body.get("ano", ""))
-    mes   = str(body.get("mes", ""))
-    valor = str(body.get("valor", ""))
-    agora = (datetime.now() - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
-    enviar_notificacao(nome, mes, ano, valor, agora)
-    return jsonify({"ok": True})
-
-@app.route("/comissao")
-def comissao():
-    if "nome" not in session:
-        return redirect("/login")
-    return send_from_directory(".", "comissao.html")
-
-@app.route("/api/comissao")
-def api_comissao():
-    if "nome" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
-    nome = session["nome"]
-    try:
-        registros = buscar_comissoes(nome)
-        return jsonify({"nome": nome, "registros": registros})
-    except Exception as e:
-        import traceback
-        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
-
-
-
-
-def enviar_notificacao(nome, mes, ano, valor, data_hora):
-    """Envia notificação via Power Automate webhook."""
-    try:
-        webhook_url = os.getenv("POWERAUTOMATE_WEBHOOK", "")
-        if not webhook_url:
-            print("POWERAUTOMATE_WEBHOOK não configurada")
-            return False
-
-        nomes_meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-        mes_nome = nomes_meses[int(mes)] if str(mes).isdigit() else mes
-
-        payload = {
-            "Nome":      nome,
-            "Periodo":   f"{mes_nome} / {ano}",
-            "Valor":     f"R$ {valor}",
-            "DataHora":  data_hora
-        }
-
-        r = req.post(webhook_url, json=payload, timeout=15)
-        print(f"Power Automate status: {r.status_code}")
-        return r.status_code in (200, 201, 202)
-    except Exception as e:
-        import traceback
-        print(f"ERRO WEBHOOK: {e}")
-        traceback.print_exc()
-        return False
-
-# ── ROTAS ────────────────────────────────────────────────────
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        usuario = request.form.get("usuario", "").strip()
-        senha   = request.form.get("senha", "").strip()
-        nome    = buscar_usuario(usuario, senha)
-        if nome:
-            session["nome"] = nome
-            return redirect("/dashboard")
-        return send_from_directory(".", "login.html"), 401
-    return send_from_directory(".", "login.html")
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/login")
-
-@app.route("/dashboard")
-def dashboard():
-    if "nome" not in session:
-        return redirect("/login")
-    return send_from_directory(".", "dashboard.html")
-
-@app.route("/api/sdr")
-def api_sdr():
-    if "nome" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
-    nome = session["nome"]
-    try:
-        mes = request.args.get("mes", type=int) or date.today().month
-        ano = request.args.get("ano", type=int) or date.today().year
-        if ano < 2026 or (ano == 2026 and mes < 5):
-            mes, ano = 5, 2026
-
-        colaborador = buscar_colaborador(nome, mes, ano)
-        if not colaborador:
-            return jsonify({"erro": f"'{nome}' nao encontrado ou inativo para {mes}/{ano}"}), 404
-
-        metas = buscar_metas(nome, mes, ano)
-        if not metas:
-            return jsonify({"erro": f"Metas de '{nome}' nao encontradas para {mes}/{ano}"}), 404
-
-        ote = buscar_ote(colaborador["cargo"])
-        if not ote:
-            return jsonify({"erro": f"OTE nao encontrado para cargo '{colaborador['cargo']}'"}), 404
-
-        users           = buscar_users()
-        user_id         = encontrar_user_id(users, nome)
-        if not user_id:
-            return jsonify({"erro": f"Usuario '{nome}' nao encontrado no Pipedrive"}), 404
-
-        deals           = buscar_deals(mes, ano)
-        activities      = buscar_activities(mes, ano)
-        qualificador_id = buscar_qualificador_id(nome)
-
-        resultado = calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities)
-        return jsonify(limpar_nans(resultado))
-
-    except Exception as e:
-        import traceback
-        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
-
-@app.route("/")
-def index():
-    return redirect("/login")
-
-@app.route("/debug/erro")
-def debug_erro():
-    if "nome" not in session:
-        return jsonify({"erro": "não autenticado"}), 401
-    try:
-        nome = session["nome"]
-        colaborador = buscar_colaborador(nome)
-        metas = buscar_metas(nome)
-        ote = buscar_ote(colaborador["cargo"]) if colaborador else None
-        users = buscar_users()
-        user_id = encontrar_user_id(users, nome)
-        deals = buscar_deals()
-        activities = buscar_activities()
-        deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
-        return jsonify({
-            "colaborador": colaborador,
-            "metas": metas,
-            "ote": ote,
-            "user_id": user_id,
-            "total_deals": len(deals),
-            "total_activities": len(activities),
-            "total_deals_rv": len(deal_ids_validos),
-        })
-    except Exception as e:
-        import traceback
-        return jsonify({"erro": str(e), "trace": traceback.format_exc()})
-
-
-@app.route("/api/closer")
-def api_closer():
-    if "nome" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
-    nome = session["nome"]
-    try:
-        mes = request.args.get("mes", type=int) or date.today().month
-        ano = request.args.get("ano", type=int) or date.today().year
-        if ano < 2026 or (ano == 2026 and mes < 5):
-            mes, ano = 5, 2026
-
-        colaborador = buscar_colaborador(nome, mes, ano)
-        if not colaborador:
-            return jsonify({"erro": f"'{nome}' nao encontrado para {mes}/{ano}"}), 404
-
-        metas = buscar_metas(nome, mes, ano)
-        if not metas:
-            return jsonify({"erro": f"Metas nao encontradas para {mes}/{ano}"}), 404
-
-        ote = buscar_ote(colaborador["cargo"])
-        if not ote:
-            return jsonify({"erro": f"OTE nao encontrado"}), 404
-
-        users   = buscar_users()
-        user_id = encontrar_user_id(users, nome)
-        if not user_id:
-            return jsonify({"erro": f"Usuario nao encontrado no Pipedrive"}), 404
-
-        deals      = buscar_deals(mes, ano)
-        activities = buscar_activities(mes, ano)
-        referidos  = buscar_referidos()
-
-        resultado = calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos)
-        return jsonify(limpar_nans(resultado))
-
-    except Exception as e:
-        import traceback
-        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
-
-@app.route("/api/tipo")
-def api_tipo():
-    """Retorna se o usuário logado é SDR ou Closer."""
-    if "nome" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
-    nome = session["nome"]
-    colaborador = buscar_colaborador(nome)
-    if not colaborador:
-        return jsonify({"tipo": "desconhecido"})
-    tipo = "closer" if is_closer(colaborador["cargo"]) else "sdr"
-    return jsonify({"tipo": tipo, "cargo": colaborador["cargo"]})
-
-# ── MAIN ─────────────────────────────────────────────────────
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5050))
-    print(f"\n Board Academy — http://localhost:{port}")
-    app.run(host="0.0.0.0", port=port, debug=False)
+carregarDados();
+</script>
+</body>
+</html>
