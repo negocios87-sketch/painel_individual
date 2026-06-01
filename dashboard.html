@@ -898,6 +898,11 @@ const fmtMoney = v => {
   return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 };
 const fmtPct  = v => v.toFixed(1) + '%';
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
 // 8 - data em dd/mm
 const fmtDate = s => {
   if (!s) return '--';
@@ -986,32 +991,32 @@ function renderTabela(tbodyId, dados, renderFn) {
 
 function render(d) {
   const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
-  document.getElementById('avatarInitials').textContent = iniciais;
-  document.getElementById('userName').textContent  = d.colaborador.nome;
-  document.getElementById('userCargo').textContent = `${d.colaborador.cargo} · ${d.colaborador.time}`;
-  document.getElementById('metaReu').textContent   = d.metas.meta_reu;
-  document.getElementById('metaFin').textContent   = fmtMoney(d.metas.meta_fin);
+  setText('avatarInitials', iniciais);
+  setText('userName', d.colaborador.nome);
+  setText('userCargo', `${d.colaborador.cargo} · ${d.colaborador.time}`);
+  setText('metaReu', d.metas.meta_reu);
+  setText('metaFin', fmtMoney(d.metas.meta_fin));
 
   atualizarGauge(d.comissao.atingimento);
 
   const badge = document.getElementById('comissaoBadge');
-  badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
-  badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
-  document.getElementById('comAtingimento').textContent = fmtPct(d.comissao.atingimento);
-  document.getElementById('comAcelerador').textContent  = 'x' + d.comissao.acelerador;
-  document.getElementById('comEstimada').textContent    = fmtMoney(d.comissao.estimada);
+  if (badge) badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
+  if (badge) badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
+  setText('comAtingimento', fmtPct(d.comissao.atingimento));
+  setText('comAcelerador', 'x' + d.comissao.acelerador);
+  setText('comEstimada', fmtMoney(d.comissao.estimada));
 
-  document.getElementById('kpiAgendadas').textContent     = d.kpis.reunioesAgendadas;
-  document.getElementById('kpiRealizadas').textContent    = d.kpis.reunioesRealizadas;
-  document.getElementById('kpiRealizadasSub').textContent = `de ${d.kpis.reunioesAgendadas} agendadas`;
-  document.getElementById('kpiPctReu').textContent        = fmtPct(d.kpis.pctMetaReu);
-  document.getElementById('kpiPctReuSub').textContent     = `meta: ${d.metas.meta_reu}`;
-  document.getElementById('kpiValorBruto').textContent    = fmtMoney(d.kpis.valorBruto);
-  document.getElementById('kpiValorMulti').textContent    = fmtMoney(d.kpis.valorMultiplicador);
-  document.getElementById('kpiPctFin').textContent        = fmtPct(d.kpis.pctMetaFin);
-  document.getElementById('kpiPctFinSub').textContent     = `meta: ${fmtMoney(d.metas.meta_fin)}`;
+  setText('kpiAgendadas', d.kpis.reunioesAgendadas);
+  setText('kpiRealizadas', d.kpis.reunioesRealizadas);
+  setText('kpiRealizadasSub', `de ${d.kpis.reunioesAgendadas} agendadas`);
+  setText('kpiPctReu', fmtPct(d.kpis.pctMetaReu));
+  setText('kpiPctReuSub', `meta: ${d.metas.meta_reu}`);
+  setText('kpiValorBruto', fmtMoney(d.kpis.valorBruto));
+  setText('kpiValorMulti', fmtMoney(d.kpis.valorMultiplicador));
+  setText('kpiPctFin', fmtPct(d.kpis.pctMetaFin));
+  setText('kpiPctFinSub', `meta: ${fmtMoney(d.metas.meta_fin)}`);
   // 6 - % qualificadas = 100 - % desqualificadas
-  document.getElementById('kpiQualif').textContent        = fmtPct(Math.max(0, 100 - d.kpis.pctDesqualificacao));
+  setText('kpiQualif', fmtPct(Math.max(0, 100 - d.kpis.pctDesqualificacao)));
 
   atualizarCharts(d.graficos);
 
@@ -1030,7 +1035,7 @@ function render(d) {
     `<tr><td>${dealLink(r.deal_id)}</td><td>${r.proprietario||'--'}</td></tr>`
   );
 
-  document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
+  setText('footerDate', `Atualizado em ${d.atualizadoEm}`);
   carregarFoto(d.colaborador.foto);
 
   // Mês atual
@@ -1411,29 +1416,29 @@ async function fetchCloser() {
 
 function renderCloser(d) {
   const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
-  document.getElementById('avatarInitials').textContent = iniciais;
-  document.getElementById('userName').textContent  = d.colaborador.nome;
-  document.getElementById('userCargo').textContent = `${d.colaborador.cargo} · ${d.colaborador.time}`;
-  document.getElementById('metaFin').textContent   = fmtMoney(d.metas.meta_fin);
+  setText('avatarInitials', iniciais);
+  setText('userName', d.colaborador.nome);
+  setText('userCargo', `${d.colaborador.cargo} · ${d.colaborador.time}`);
+  setText('metaFin', fmtMoney(d.metas.meta_fin));
 
   atualizarGauge(d.comissao.atingimento);
 
   const badge = document.getElementById('comissaoBadge');
-  badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
-  badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
-  document.getElementById('comAtingimento').textContent = fmtPct(d.comissao.atingimento);
-  document.getElementById('comAcelerador').textContent  = 'x' + d.comissao.acelerador;
-  document.getElementById('comEstimada').textContent    = fmtMoney(d.comissao.estimada);
+  if (badge) badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
+  if (badge) badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
+  setText('comAtingimento', fmtPct(d.comissao.atingimento));
+  setText('comAcelerador', 'x' + d.comissao.acelerador);
+  setText('comEstimada', fmtMoney(d.comissao.estimada));
 
-  document.getElementById('kpiRealizadas').textContent    = d.kpis.reunioesRealizadas;
-  document.getElementById('kpiValidadas').textContent     = d.kpis.reunioesValidadas;
-  document.getElementById('kpiValidadasSub').textContent  = `de ${d.kpis.reunioesRealizadas} realizadas`;
-  document.getElementById('kpiPctValidadas').textContent  = fmtPct(d.kpis.pctValidadas);
-  document.getElementById('kpiValorBruto').textContent    = fmtMoney(d.kpis.valorBruto);
-  document.getElementById('kpiValorMulti').textContent    = fmtMoney(d.kpis.valorMultiplicador);
-  document.getElementById('kpiPctFin').textContent        = fmtPct(d.kpis.pctMetaFin);
-  document.getElementById('kpiPctFinSub').textContent     = `meta: ${fmtMoney(d.metas.meta_fin)}`;
-  document.getElementById('kpiReferidos').textContent     = d.kpis.volumeReferidos;
+  setText('kpiRealizadas', d.kpis.reunioesRealizadas);
+  setText('kpiValidadas', d.kpis.reunioesValidadas);
+  setText('kpiValidadasSub', `de ${d.kpis.reunioesRealizadas} realizadas`);
+  setText('kpiPctValidadas', fmtPct(d.kpis.pctValidadas));
+  setText('kpiValorBruto', fmtMoney(d.kpis.valorBruto));
+  setText('kpiValorMulti', fmtMoney(d.kpis.valorMultiplicador));
+  setText('kpiPctFin', fmtPct(d.kpis.pctMetaFin));
+  setText('kpiPctFinSub', `meta: ${fmtMoney(d.metas.meta_fin)}`);
+  setText('kpiReferidos', d.kpis.volumeReferidos);
 
   // Gráficos
   const reLabels = d.graficos.serieRealizadas.map(x => fmtLabel(x.data));
@@ -1462,7 +1467,7 @@ function renderCloser(d) {
     `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_criacao)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
   );
 
-  document.getElementById('footerDate').textContent = `Atualizado em ${d.atualizadoEm}`;
+  setText('footerDate', `Atualizado em ${d.atualizadoEm}`);
   carregarFoto(d.colaborador.foto);
 
   const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
