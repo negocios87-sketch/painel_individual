@@ -616,6 +616,14 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
   .com-table td { padding:12px 12px 4px 0; color:var(--white); font-family:var(--font-mono); font-size:13px; }
   .com-table td.yellow { color:var(--yellow); }
 
+
+  /* SELETOR DE MÊS */
+  .mes-selector { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .mes-selector select { background:var(--surface); border:1px solid var(--border); color:var(--white); border-radius:6px; padding:6px 12px; font-family:var(--font-mono); font-size:12px; cursor:pointer; outline:none; }
+  .mes-selector select:focus { border-color:var(--yellow); }
+  .mes-selector label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .mes-selector .btn-aplicar { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:6px 16px; font-family:var(--font-display); font-size:14px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
+  .mes-selector .btn-aplicar:hover { opacity:0.85; }
   /* PAGINAÇÃO */
   .pag-wrap { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
   .pag-info { font-family:var(--font-mono); font-size:10px; color:var(--muted); letter-spacing:1px; }
@@ -692,8 +700,25 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 <!-- ABA DASHBOARD -->
 <div id="aba-dashboard">
 
-<!-- MÊS ATUAL -->
-<div style="font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;" id="mesAtual">--</div>
+<!-- SELETOR DE MÊS -->
+<div class="mes-selector">
+  <label>Período</label>
+  <select id="selMes">
+    <option value="5">Maio</option>
+    <option value="6">Junho</option>
+    <option value="7">Julho</option>
+    <option value="8">Agosto</option>
+    <option value="9">Setembro</option>
+    <option value="10">Outubro</option>
+    <option value="11">Novembro</option>
+    <option value="12">Dezembro</option>
+  </select>
+  <select id="selAno">
+    <option value="2026">2026</option>
+  </select>
+  <button class="btn-aplicar" onclick="aplicarFiltro()">Aplicar</button>
+  <div style="font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-left:8px;" id="mesAtual">--</div>
+</div>
 
 <!-- COMISSÃO — 4: sem projeção -->
 <div class="comissao-bar">
@@ -838,7 +863,23 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 <script>
 Chart.register(ChartDataLabels);
 
-const API_URL    = '/api/sdr';
+const API_URL_BASE = '/api/sdr';
+const API_CLOSER_BASE = '/api/closer';
+let API_URL = '/api/sdr';
+
+function getApiUrl(base) {
+  const mes = document.getElementById('selMes')?.value || new Date().getMonth()+1;
+  const ano = document.getElementById('selAno')?.value || new Date().getFullYear();
+  return `${base}?mes=${mes}&ano=${ano}`;
+}
+
+function aplicarFiltro() {
+  if (session_tipo === 'closer') {
+    fetchCloser();
+  } else {
+    fetchDados();
+  }
+}
 const REFRESH_MS = 5 * 60 * 1000;
 const PIPE_URL   = 'https://boardacademy.pipedrive.com/deal/';
 
@@ -995,7 +1036,9 @@ function render(d) {
   // Mês atual
   const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const agora = new Date();
-  document.getElementById('mesAtual').textContent = meses[agora.getMonth()+1] + ' / ' + agora.getFullYear();
+  const mesSel = parseInt(document.getElementById('selMes')?.value || agora.getMonth()+1);
+  const anoSel = parseInt(document.getElementById('selAno')?.value || agora.getFullYear());
+  document.getElementById('mesAtual').textContent = meses[mesSel] + ' / ' + anoSel;
 
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
@@ -1003,7 +1046,7 @@ function render(d) {
 
 async function fetchDados() {
   try {
-    const resp = await fetch(API_URL);
+    const resp = await fetch(getApiUrl(API_URL_BASE));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     if (data.erro) throw new Error(data.erro);
@@ -1020,6 +1063,13 @@ async function init() {
   const tipoData = await tipoResp.json();
   const tipo = tipoData.tipo || 'sdr';
   session_tipo = tipo;
+
+  // Inicializa seletor com mês atual
+  const agr = new Date();
+  const selM = document.getElementById('selMes');
+  const selA = document.getElementById('selAno');
+  if (selM) selM.value = agr.getMonth() + 1;
+  if (selA) selA.value = agr.getFullYear();
 
   if (tipo === 'closer') {
     // Ajusta UI para Closer
@@ -1348,7 +1398,7 @@ function tablesRowCloser() {
 
 async function fetchCloser() {
   try {
-    const resp = await fetch('/api/closer');
+    const resp = await fetch(getApiUrl(API_CLOSER_BASE));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const d = await resp.json();
     if (d.erro) throw new Error(d.erro);
@@ -1417,7 +1467,9 @@ function renderCloser(d) {
 
   const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const agora = new Date();
-  document.getElementById('mesAtual').textContent = meses[agora.getMonth()+1] + ' / ' + agora.getFullYear();
+  const mesSel = parseInt(document.getElementById('selMes')?.value || agora.getMonth()+1);
+  const anoSel = parseInt(document.getElementById('selAno')?.value || agora.getFullYear());
+  document.getElementById('mesAtual').textContent = meses[mesSel] + ' / ' + anoSel;
 
   document.getElementById('loading').style.display   = 'none';
   document.getElementById('dashboard').style.display = 'block';
