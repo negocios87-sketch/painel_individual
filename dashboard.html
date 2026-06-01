@@ -3,1071 +3,1488 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comissão — Board Academy</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',system-ui,sans-serif;font-size:14px;color:#111;background:#f8f8f6;min-height:100vh}
-a{color:inherit;text-decoration:none}
-/* HEADER */
-header{background:#fff;border-bottom:1px solid #e8e8e4;padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.logo{font-size:14px;font-weight:600;letter-spacing:.01em;color:#111}
-.logo span{color:#d94040}
-.hcontrols{display:flex;align-items:center;gap:10px}
-.period-box{display:flex;align-items:center;gap:6px;border:1px solid #e0e0da;border-radius:8px;padding:6px 12px;background:#fff}
-.period-box select{border:none;background:transparent;font-size:13px;font-family:inherit;color:#111;outline:none;cursor:pointer}
-.period-box select option{background:#fff}
-/* BUTTONS */
-.btn{font-family:inherit;font-size:12px;font-weight:500;padding:7px 14px;border-radius:7px;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .15s,border-color .15s}
-.btn-outline{background:#fff;border-color:#e0e0da;color:#444}
-.btn-outline:hover{border-color:#aaa;color:#111}
-.btn-red{background:#d94040;color:#fff;border-color:#d94040}
-.btn-red:hover{background:#c03333}
-.btn-green{background:#1a7f4b;color:#fff;border-color:#1a7f4b}
-.btn-green:hover{background:#156040}
-.btn-amber{background:#d97706;color:#fff;border-color:#d97706}
-.btn-amber:hover{background:#b86505}
-/* MAIN */
-main{padding:28px 32px;max-width:1400px;margin:0 auto}
-/* STAT CARDS */
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:28px}
-.scard{background:#fff;border:1px solid #e8e8e4;border-radius:10px;padding:14px 16px}
-.scard-label{font-size:11px;color:#888;font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
-.scard-value{font-size:20px;font-weight:600;color:#111}
-.scard-value.red{color:#d94040}
-.scard-value.green{color:#1a7f4b}
-.scard-value.amber{color:#d97706}
-/* TABS */
-.tabs{display:flex;gap:2px;background:#ebebea;border-radius:9px;padding:3px;margin-bottom:24px;width:fit-content}
-.tab{padding:7px 20px;border-radius:7px;font-size:13px;font-weight:500;color:#666;cursor:pointer;transition:all .15s;border:none;background:transparent;font-family:inherit}
-.tab.active{background:#fff;color:#111;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-/* SEARCH */
-.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px}
-.search{border:1px solid #e0e0da;border-radius:7px;padding:7px 12px;font-size:13px;font-family:inherit;background:#fff;color:#111;outline:none;width:240px}
-.search:focus{border-color:#999}
-/* TABLE */
-.squad-block{margin-bottom:32px}
-.squad-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#888;padding:0 0 8px;border-bottom:1px solid #e8e8e4;margin-bottom:0}
-table{width:100%;border-collapse:collapse}
-thead th{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#888;padding:10px 14px;text-align:left;background:#fff;border-bottom:1px solid #e8e8e4;white-space:nowrap}
-thead th.right{text-align:right}
-tbody tr{background:#fff;border-bottom:1px solid #f0f0ec;transition:background .1s;cursor:pointer}
-tbody tr:hover{background:#fafaf8}
-tbody tr.validado{background:#f0faf5}
-tbody tr.ajustado td:first-child{border-left:3px solid #d97706}
-td{padding:11px 14px;font-size:13px;color:#222;vertical-align:middle}
-td.right{text-align:right;font-variant-numeric:tabular-nums}
-td.muted{color:#888}
-/* BADGES */
-.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase}
-.badge-sdr{background:#fef9e7;color:#9a6a00;border:1px solid #fde68a}
-.badge-closer{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
-.badge-lider{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
-.badge-head{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-.badge-gerente{background:#faf5ff;color:#6b21a8;border:1px solid #e9d5ff}
-.badge-inside{background:#f0f9ff;color:#0c4a6e;border:1px solid #bae6fd}
-/* PCT PILL */
-.pct{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:4px;font-variant-numeric:tabular-nums}
-.pct-green{background:#f0fdf4;color:#15803d}
-.pct-yellow{background:#fefce8;color:#854d0e}
-.pct-orange{background:#fff7ed;color:#9a3412}
-.pct-red{background:#fef2f2;color:#991b1b}
-.pct-gray{background:#f5f5f4;color:#737373}
-td.col-ating{background:#eeede9;font-weight:600}
-thead th.col-ating{background:#e2e1dc;color:#333}
-.bonus-input{width:120px;border:1px solid #e0e0da;border-radius:5px;padding:5px 8px;font-size:12px;font-family:inherit;color:#111;background:#fff;outline:none;text-align:right}
-.bonus-input:focus{border-color:#1a7f4b}
-.bonus-saved{border-color:#bbf7d0;background:#f0fdf4}
-/* COMISSÃO VALUE */
-.comval{font-weight:600;font-size:13px;color:#111;font-variant-numeric:tabular-nums}
-.comval.ajustado{color:#d97706}
-/* STATUS */
-.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
-.dot-green{background:#1a7f4b}
-.dot-yellow{background:#d97706}
-.dot-gray{background:#d1d5db}
-/* ACTIONS */
-.act-btn{font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:5px;border:1px solid #e0e0da;background:#fff;color:#555;cursor:pointer}
-.act-btn:hover{border-color:#999;color:#111}
-.act-btn.green{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
-.act-btn.green:hover{background:#dcfce7}
-/* EMPTY */
-.empty{text-align:center;padding:60px 20px;color:#aaa;font-size:13px}
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
-.overlay.open{opacity:1;pointer-events:all}
-.modal{background:#fff;border-radius:14px;border:1px solid #e0e0da;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;transform:translateY(16px);transition:transform .2s}
-.overlay.open .modal{transform:translateY(0)}
-.mhead{padding:18px 22px;border-bottom:1px solid #e8e8e4;display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:#fff;z-index:1}
-.mhead-info .mtitle{font-size:17px;font-weight:600}
-.mhead-info .msub{font-size:12px;color:#888;margin-top:2px}
-.mclose{background:none;border:none;font-size:18px;color:#aaa;cursor:pointer;line-height:1;padding:2px}
-.mclose:hover{color:#333}
-.mbody{padding:20px 22px}
-.msection{margin-bottom:20px}
-.msection h4{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#d94040;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0f0ec}
-.formula{background:#f8f8f6;border:1px solid #e8e8e4;border-radius:8px;padding:14px 16px;font-family:'Courier New',monospace;font-size:12px;line-height:1.9;color:#333}
-.formula .hl{color:#d97706;font-weight:600}
-.formula .res{color:#1a7f4b;font-weight:600}
-.formula .op{color:#aaa}
-.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.kv-item .kv-key{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
-.kv-item .kv-val{font-size:14px;font-weight:500;color:#111}
-.ajlog{background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:11px 13px;margin-bottom:8px}
-.ajlog .ajl-header{font-size:10px;color:#d97706;font-weight:600;margin-bottom:3px}
-.ajlog .ajl-text{font-size:12px;font-family:'Courier New',monospace;color:#333}
-.ajlog .ajl-motivo{font-size:11px;color:#888;margin-top:3px;font-style:italic}
-/* AJUSTE FORM */
-.ajform{background:#f8f8f6;border:1px solid #e0e0da;border-radius:8px;padding:16px;margin-top:12px}
-.flabel{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#666;display:block;margin-bottom:5px}
-.finput,.fselect{width:100%;border:1px solid #e0e0da;border-radius:6px;padding:8px 11px;font-size:13px;font-family:inherit;color:#111;background:#fff;outline:none;margin-bottom:12px}
-.finput:focus,.fselect:focus{border-color:#999}
-.factions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
-/* TOAST */
-.toasts{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:7px;z-index:200}
-.toast{background:#fff;border:1px solid #e0e0da;border-radius:8px;padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);animation:tin .2s ease}
-@keyframes tin{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
-.toast.ok{border-color:#bbf7d0;color:#166534}
-.toast.err{border-color:#fecaca;color:#991b1b}
-.toast.warn{border-color:#fde68a;color:#854d0e}
-/* LOADING */
-.loader{position:fixed;inset:0;background:rgba(248,248,246,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:300;transition:opacity .2s}
-.loader.gone{opacity:0;pointer-events:none}
-.spin{width:32px;height:32px;border:2px solid #e0e0da;border-top-color:#d94040;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.ltext{font-size:12px;color:#888}
+<title>Dashboard SDR – Board Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
 
-/* MDO TABLE */
-.mdo-wrap{width:100%;margin-bottom:24px}
-.mdo-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
-.mdo-table thead th{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#666;padding:8px 6px;text-align:left;background:#fff;border-bottom:2px solid #e8e8e4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mdo-table thead th.right{text-align:right}
-.mdo-table thead th.center{text-align:center}
-.mdo-table tbody tr{background:#fff;border-bottom:1px solid #f0f0ec}
-.mdo-table tbody tr:hover{background:#fafaf8}
-.mdo-table tbody tr.lider-row{background:#f8f8f6}
-.mdo-table tbody tr.lider-row td{font-style:italic;color:#555}
-.mdo-table td{padding:7px 6px;vertical-align:middle;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mdo-table td.right{text-align:right;font-variant-numeric:tabular-nums}
-.mdo-table td.center{text-align:center}
-.mdo-table td.muted{color:#aaa}
-.mdo-table td.bold-col{font-weight:600}
-.mdo-table td.col-ating{background:#eeede9;font-weight:600;text-align:right}
-.mdo-input{width:80px;border:1px solid #e0e0da;border-radius:4px;padding:3px 5px;font-size:10px;font-family:inherit;color:#111;background:#fff;outline:none;text-align:right}
-.mdo-input:focus{border-color:#1a7f4b}
-.mdo-input.filled{border-color:#bbf7d0;background:#f0fdf4}
-.mdo-obs{width:100%;border:1px solid #e0e0da;border-radius:4px;padding:3px 5px;font-size:10px;font-family:inherit;color:#111;background:#fff;outline:none}
-.mdo-obs:focus{border-color:#999}
-.squad-sep td{background:#f4f4f2!important;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#888;padding:5px 6px!important;border-top:1px solid #e0e0da}
-.mdo-total-row td{background:#1a1a1a!important;color:#fff!important;font-weight:600;font-size:11px}
-.mdo-total-row td.col-ating{background:#333!important;color:#FFD700!important}
+// ── PAGINAÇÃO ────────────────────────────────────────────────
+const PAG_SIZE = 10;
+const _pagState = {};
+
+function pagInit(id, dados, renderFn) {
+  _pagState[id] = { dados, pagina: 0, renderFn };
+  pagRender(id);
+}
+
+function pagRender(id) {
+  const s = _pagState[id];
+  if (!s) return;
+  const { dados, pagina, renderFn } = s;
+  const total   = dados.length;
+  const totalPag = Math.ceil(total / PAG_SIZE);
+  const inicio  = pagina * PAG_SIZE;
+  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+
+  const tbody = document.getElementById(id);
+  if (!tbody) return;
+
+  if (!fatia.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+  } else {
+    tbody.innerHTML = fatia.map(renderFn).join('');
+  }
+
+  // Paginação
+  const pagWrapId = id + '_pag';
+  let pagWrap = document.getElementById(pagWrapId);
+  if (!pagWrap) {
+    pagWrap = document.createElement('div');
+    pagWrap.id = pagWrapId;
+    pagWrap.className = 'pag-wrap';
+    tbody.closest('table').after(pagWrap);
+  }
+
+  if (total <= PAG_SIZE) {
+    pagWrap.innerHTML = '';
+    return;
+  }
+
+  pagWrap.innerHTML = `
+    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
+    <div class="pag-btns">
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
+    </div>`;
+}
+
+function pagIr(id, nova) {
+  if (!_pagState[id]) return;
+  _pagState[id].pagina = nova;
+  pagRender(id);
+}
+
+// ── ABAS ────────────────────────────────────────────────────
+function mudarAba(aba, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
+  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
+  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
+}
+
+// ── COMISSÃO ────────────────────────────────────────────────
+const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let comissaoCarregada = false;
+let dadosComissao = [];
+let pendenteMesIdx = null;
+
+const fmtMoneyC = v => {
+  if (!v || v === 'nan') return 'R$ 0';
+  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0';
+  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+const fmtPctC = v => v && v !== 'nan' ? v : '--';
+
+async function carregarComissao() {
+  comissaoCarregada = true;
+  try {
+    const resp = await fetch('/api/comissao');
+    const data = await resp.json();
+    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
+    dadosComissao = data.registros;
+    // Aplica confirmações salvas no localStorage
+    dadosComissao.forEach(r => {
+      const chave = `confirmacao_${r.ano}_${r.mes}`;
+      const salvo = localStorage.getItem(chave);
+      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
+        r.confirmacao = salvo;
+      }
+    });
+    renderComissao();
+  } catch(e) {
+    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
+  }
+}
+
+function renderComissao() {
+  const el = document.getElementById('listaMeses');
+  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+
+  el.innerHTML = dadosComissao.map((r, i) => {
+    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
+    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
+    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
+    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
+
+    const comissaoCol = elegivel
+      ? `<th style="color:var(--yellow)">Comissão</th>`
+      : `<th style="color:var(--red)">Comissão</th>`;
+    const comissaoVal = elegivel
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
+
+    const metricas = `
+      <table class="com-table">
+        <thead>
+          <tr>
+            <th>Vol. Reuniões</th>
+            <th>Valor Financeiro</th>
+            <th>% Reunião</th>
+            <th>% Financeiro</th>
+            <th>% Meta Final</th>
+            <th>Acelerador</th>
+            <th>Variável OTE</th>
+            <th>Rampagem</th>
+            ${comissaoCol}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${r.vol_reuniao || '--'}</td>
+            <td>${fmtMoneyC(r.valor_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
+            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
+            <td>${r.acelerador || '--'}</td>
+            <td>${fmtMoneyC(r.variavel_ote)}</td>
+            <td>${r.rampagem || '--'}</td>
+            ${comissaoVal}
+          </tr>
+        </tbody>
+      </table>`;
+
+    const comissaoHtml = '';
+
+    let acao = '';
+    if (elegivel && confirmado) {
+      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
+    } else if (elegivel) {
+      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+    }
+
+    return `<div class="mes-card ${cardClass}">
+      <div class="mes-header">
+        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
+        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
+      </div>
+      ${metricas}${comissaoHtml}${acao}
+    </div>`;
+  }).join('');
+}
+
+function abrirModal(idx) {
+  pendenteMesIdx = idx;
+  const r = dadosComissao[idx];
+  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
+  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
+  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  pendenteMesIdx = null;
+}
+
+async function confirmarDefinitivo() {
+  if (pendenteMesIdx === null) return;
+  const r = dadosComissao[pendenteMesIdx];
+  document.getElementById('btnOk').disabled = true;
+
+  // Salva confirmação no localStorage
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const chave = `confirmacao_${r.ano}_${r.mes}`;
+  localStorage.setItem(chave, dataHora);
+  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
+  // Envia e-mail de confirmação
+  await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
+  });
+
+  fecharModal();
+  document.getElementById('successOverlay').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('successOverlay').classList.add('hidden');
+    renderComissao();
+  }, 3500);
+
+  document.getElementById('btnOk').disabled = false;
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) fecharModal();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js">
+
+// ── PAGINAÇÃO ────────────────────────────────────────────────
+const PAG_SIZE = 10;
+const _pagState = {};
+
+function pagInit(id, dados, renderFn) {
+  _pagState[id] = { dados, pagina: 0, renderFn };
+  pagRender(id);
+}
+
+function pagRender(id) {
+  const s = _pagState[id];
+  if (!s) return;
+  const { dados, pagina, renderFn } = s;
+  const total   = dados.length;
+  const totalPag = Math.ceil(total / PAG_SIZE);
+  const inicio  = pagina * PAG_SIZE;
+  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+
+  const tbody = document.getElementById(id);
+  if (!tbody) return;
+
+  if (!fatia.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+  } else {
+    tbody.innerHTML = fatia.map(renderFn).join('');
+  }
+
+  // Paginação
+  const pagWrapId = id + '_pag';
+  let pagWrap = document.getElementById(pagWrapId);
+  if (!pagWrap) {
+    pagWrap = document.createElement('div');
+    pagWrap.id = pagWrapId;
+    pagWrap.className = 'pag-wrap';
+    tbody.closest('table').after(pagWrap);
+  }
+
+  if (total <= PAG_SIZE) {
+    pagWrap.innerHTML = '';
+    return;
+  }
+
+  pagWrap.innerHTML = `
+    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
+    <div class="pag-btns">
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
+    </div>`;
+}
+
+function pagIr(id, nova) {
+  if (!_pagState[id]) return;
+  _pagState[id].pagina = nova;
+  pagRender(id);
+}
+
+// ── ABAS ────────────────────────────────────────────────────
+function mudarAba(aba, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
+  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
+  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
+}
+
+// ── COMISSÃO ────────────────────────────────────────────────
+const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let comissaoCarregada = false;
+let dadosComissao = [];
+let pendenteMesIdx = null;
+
+const fmtMoneyC = v => {
+  if (!v || v === 'nan') return 'R$ 0';
+  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0';
+  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+const fmtPctC = v => v && v !== 'nan' ? v : '--';
+
+async function carregarComissao() {
+  comissaoCarregada = true;
+  try {
+    const resp = await fetch('/api/comissao');
+    const data = await resp.json();
+    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
+    dadosComissao = data.registros;
+    // Aplica confirmações salvas no localStorage
+    dadosComissao.forEach(r => {
+      const chave = `confirmacao_${r.ano}_${r.mes}`;
+      const salvo = localStorage.getItem(chave);
+      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
+        r.confirmacao = salvo;
+      }
+    });
+    renderComissao();
+  } catch(e) {
+    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
+  }
+}
+
+function renderComissao() {
+  const el = document.getElementById('listaMeses');
+  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+
+  el.innerHTML = dadosComissao.map((r, i) => {
+    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
+    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
+    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
+    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
+
+    const comissaoCol = elegivel
+      ? `<th style="color:var(--yellow)">Comissão</th>`
+      : `<th style="color:var(--red)">Comissão</th>`;
+    const comissaoVal = elegivel
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
+
+    const metricas = `
+      <table class="com-table">
+        <thead>
+          <tr>
+            <th>Vol. Reuniões</th>
+            <th>Valor Financeiro</th>
+            <th>% Reunião</th>
+            <th>% Financeiro</th>
+            <th>% Meta Final</th>
+            <th>Acelerador</th>
+            <th>Variável OTE</th>
+            <th>Rampagem</th>
+            ${comissaoCol}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${r.vol_reuniao || '--'}</td>
+            <td>${fmtMoneyC(r.valor_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
+            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
+            <td>${r.acelerador || '--'}</td>
+            <td>${fmtMoneyC(r.variavel_ote)}</td>
+            <td>${r.rampagem || '--'}</td>
+            ${comissaoVal}
+          </tr>
+        </tbody>
+      </table>`;
+
+    const comissaoHtml = '';
+
+    let acao = '';
+    if (elegivel && confirmado) {
+      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
+    } else if (elegivel) {
+      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+    }
+
+    return `<div class="mes-card ${cardClass}">
+      <div class="mes-header">
+        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
+        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
+      </div>
+      ${metricas}${comissaoHtml}${acao}
+    </div>`;
+  }).join('');
+}
+
+function abrirModal(idx) {
+  pendenteMesIdx = idx;
+  const r = dadosComissao[idx];
+  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
+  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
+  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  pendenteMesIdx = null;
+}
+
+async function confirmarDefinitivo() {
+  if (pendenteMesIdx === null) return;
+  const r = dadosComissao[pendenteMesIdx];
+  document.getElementById('btnOk').disabled = true;
+
+  // Salva confirmação no localStorage
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const chave = `confirmacao_${r.ano}_${r.mes}`;
+  localStorage.setItem(chave, dataHora);
+  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
+  // Envia e-mail de confirmação
+  await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
+  });
+
+  fecharModal();
+  document.getElementById('successOverlay').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('successOverlay').classList.add('hidden');
+    renderComissao();
+  }, 3500);
+
+  document.getElementById('btnOk').disabled = false;
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) fecharModal();
+});
+</script>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+    --border: #222; --yellow: #f5c400; --yellow-dim: #f5c40022;
+    --white: #f0f0f0; --muted: #888; --green: #2adf8a; --red: #ff4c4c;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--white); font-family:var(--font-body); min-height:100vh; padding:clamp(12px,2vw,28px); background-image:radial-gradient(ellipse at 80% 0%,#f5c40008 0%,transparent 60%); }
+
+  #loading { display:flex; flex-direction:column; align-items:center; justify-content:center; height:80vh; gap:16px; }
+  .spinner { width:48px; height:48px; border:3px solid var(--border); border-top-color:var(--yellow); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-txt { font-family:var(--font-mono); font-size:12px; color:var(--muted); letter-spacing:2px; }
+
+  #dashboard { display:none; }
+
+  /* HEADER */
+  .header { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:24px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--border); }
+
+  /* 1 - Avatar maior */
+  .avatar { width:clamp(90px,10vw,130px); height:clamp(90px,10vw,130px); border-radius:50%; background:var(--surface2); border:3px solid var(--yellow); display:flex; align-items:center; justify-content:center; font-size:clamp(32px,4vw,48px); font-weight:700; color:var(--yellow); overflow:hidden; flex-shrink:0; }
+  .avatar img { width:100%; height:100%; object-fit:cover; }
+
+  .user-name { font-family:var(--font-display); font-size:clamp(24px,3vw,38px); letter-spacing:1px; color:var(--white); line-height:1; }
+  /* 1 - cinza mais claro no cargo e metas */
+  .user-cargo { font-size:clamp(11px,1.2vw,14px); color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-top:6px; }
+  .metas-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .meta-tag { font-family:var(--font-mono); font-size:clamp(11px,1.1vw,13px); padding:5px 14px; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
+  .meta-tag span { color:var(--yellow); font-weight:500; }
+
+  /* Gauge */
+  .gauge-wrap { display:flex; flex-direction:column; align-items:center; }
+  .gauge-svg { width:clamp(200px,22vw,300px); height:auto; overflow:visible; }
+
+  /* Logo */
+  .logo-box { border:1px solid var(--border); padding:10px 20px; border-radius:8px; background:var(--surface); display:flex; align-items:center; justify-content:center; height:clamp(90px,10vw,130px); min-width:clamp(120px,12vw,180px); }
+  .logo-box img { max-height:100%; max-width:100%; object-fit:contain; }
+
+  /* COMISSÃO */
+  .comissao-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; padding:14px 18px; background:var(--surface); border:1px solid var(--border); border-radius:8px; }
+  .comissao-badge { font-family:var(--font-mono); font-size:11px; padding:4px 12px; border-radius:4px; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
+  .comissao-badge.on  { background:#2adf8a22; color:var(--green); border:1px solid var(--green); }
+  .comissao-badge.off { background:#ff4c4c22; color:var(--red);   border:1px solid var(--red); }
+  .comissao-info { font-size:13px; color:var(--muted); }
+  .comissao-info span { color:var(--white); font-weight:600; }
+
+  /* KPI GRID */
+  .kpi-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-bottom:28px; }
+  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 12px; display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden; transition:border-color 0.2s; animation:fadeUp 0.4s ease both; }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--yellow); opacity:0; transition:opacity 0.2s; }
+  .kpi-card:hover { border-color:var(--yellow); }
+  .kpi-card:hover::before { opacity:1; }
+  .kpi-label { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); line-height:1.3; }
+  .kpi-value { font-family:var(--font-display); font-size:clamp(22px,2.5vw,34px); color:var(--white); line-height:1; }
+  .kpi-value.yellow { color:var(--yellow); }
+  .kpi-value.green  { color:var(--green); }
+  .kpi-value.red    { color:var(--red); }
+  .kpi-sub { font-family:var(--font-mono); font-size:10px; color:var(--muted); }
+
+  /* CHARTS */
+  .charts-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:28px; }
+  .chart-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; animation:fadeUp 0.4s ease both; }
+  .chart-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:14px; }
+  .chart-canvas-wrap { height:150px; position:relative; }
+
+  /* TABLES */
+  .tables-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .table-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; overflow:hidden; animation:fadeUp 0.4s ease both; }
+  .table-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:14px; }
+  .data-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .data-table th { text-align:left; color:var(--muted); font-family:var(--font-mono); font-size:10px; font-weight:400; letter-spacing:1px; padding-bottom:8px; border-bottom:1px solid var(--border); text-transform:uppercase; }
+  .data-table td { padding:9px 0; border-bottom:1px solid #1a1a1a; color:var(--white); font-size:12px; vertical-align:middle; }
+  .data-table tr:last-child td { border-bottom:none; }
+  .data-table td.mono  { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .data-table td.money { font-family:var(--font-mono); color:var(--green); font-size:11px; }
+  .empty-row { font-family:var(--font-mono); font-size:11px; color:var(--muted); padding:12px 0; }
+
+  /* 7 - Link deal */
+  .deal-link { font-family:var(--font-mono); font-size:11px; color:var(--yellow); text-decoration:none; opacity:0.8; }
+  .deal-link:hover { opacity:1; text-decoration:underline; }
+
+  /* FOOTER */
+  .footer { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-top:28px; padding-top:16px; border-top:1px solid var(--border); }
+  .footer-label { font-size:10px; text-transform:uppercase; letter-spacing:3px; color:var(--muted); }
+  .footer-date  { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  /* RESPONSIVO */
+  @media (max-width: 1100px) {
+    .kpi-grid { grid-template-columns:repeat(4,1fr); }
+    .charts-row { grid-template-columns:1fr 1fr; }
+    .tables-row { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width: 720px) {
+    .header { grid-template-columns:1fr; grid-template-rows:auto auto auto; }
+    .header-left { justify-content:center; }
+    .header-right { justify-content:center; }
+    .gauge-wrap { grid-column:1/3; }
+    .logo-box   { grid-column:1/3; height:70px; }
+    .kpi-grid   { grid-template-columns:repeat(2,1fr); }
+    .charts-row { grid-template-columns:1fr; }
+    .tables-row { grid-template-columns:1fr; }
+  }
+
+  /* ABAS DE NAVEGAÇÃO */
+  .tabs { display:flex; gap:4px; margin-bottom:24px; border-bottom:1px solid var(--border); }
+  .tab-btn { font-family:var(--font-mono); font-size:11px; padding:10px 20px; border:none; background:transparent; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; letter-spacing:1.5px; text-transform:uppercase; transition:all 0.2s; }
+  .tab-btn:hover { color:var(--white); }
+  .tab-btn.active { color:var(--yellow); border-bottom-color:var(--yellow); }
+
+  /* PÁGINA COMISSÃO */
+  .formula-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px 22px; margin-bottom:24px; }
+  .formula-label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+  .formula { font-family:var(--font-mono); font-size:13px; color:var(--white); }
+  .formula span { color:var(--yellow); }
+  .mes-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:24px; margin-bottom:16px; }
+  .mes-card.confirmado { border-color:#2adf8a44; }
+  .mes-card.nao-elegivel { border-color:#ff4c4c33; }
+  .mes-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .mes-titulo { font-family:var(--font-display); font-size:26px; letter-spacing:1px; color:var(--white); }
+  .mes-nivel { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:4px; letter-spacing:1px; }
+  .badge-elegivel { font-family:var(--font-mono); font-size:10px; padding:3px 10px; border-radius:3px; text-transform:uppercase; letter-spacing:1px; }
+  .badge-elegivel.sim { background:#2adf8a22; color:var(--green); border:1px solid var(--green); }
+  .badge-elegivel.nao { background:#ff4c4c22; color:var(--red); border:1px solid var(--red); }
+  .metricas { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-bottom:18px; }
+  .metrica { background:var(--surface2); border-radius:6px; padding:10px 12px; }
+  .metrica-label { font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
+  .metrica-valor { font-family:var(--font-display); font-size:20px; color:var(--white); }
+  .metrica-valor.yellow { color:var(--yellow); }
+  .metrica-valor.green  { color:var(--green); }
+  .comissao-destaque { background:linear-gradient(135deg,#1a1a0a,#111); border:1px solid var(--yellow); border-radius:8px; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+  .comissao-label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; }
+  .comissao-valor { font-family:var(--font-display); font-size:38px; color:var(--yellow); line-height:1; }
+  .nao-elegivel-msg { background:#ff4c4c11; border:1px solid #ff4c4c33; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--red); }
+  .confirmacao-area { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
+  .btn-confirmar { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:10px 22px; font-family:var(--font-display); font-size:17px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
+  .btn-confirmar:hover { opacity:0.85; }
+  .confirmado-msg { display:flex; align-items:center; gap:8px; }
+  .confirmado-check { color:var(--green); font-size:16px; }
+  .confirmado-txt { font-family:var(--font-mono); font-size:11px; color:var(--green); letter-spacing:1px; }
+  .com-empty { text-align:center; padding:60px 20px; color:var(--muted); font-family:var(--font-mono); font-size:13px; letter-spacing:1px; }
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:999; padding:20px; }
+  .modal-overlay.hidden { display:none; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:32px; max-width:460px; width:100%; animation:fadeUp 0.3s ease; }
+  .modal-title { font-family:var(--font-display); font-size:26px; color:var(--yellow); letter-spacing:1px; margin-bottom:14px; }
+  .modal-body { font-size:14px; color:var(--muted); margin-bottom:8px; }
+  .modal-valor { font-family:var(--font-display); font-size:36px; color:var(--white); margin:14px 0 4px; }
+  .modal-mes { font-family:var(--font-mono); font-size:12px; color:var(--muted); margin-bottom:24px; letter-spacing:1px; }
+  .modal-btns { display:flex; gap:12px; justify-content:flex-end; }
+  .btn-cancelar { background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:10px 18px; font-family:var(--font-body); font-size:14px; cursor:pointer; transition:all 0.2s; }
+  .btn-cancelar:hover { border-color:var(--muted); color:var(--white); }
+  .btn-ok { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:10px 22px; font-family:var(--font-display); font-size:18px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
+  .btn-ok:hover { opacity:0.85; }
+  .btn-ok:disabled { opacity:0.4; cursor:not-allowed; }
+  /* SUCCESS */
+  .success-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.92); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .success-overlay.hidden { display:none; }
+  .success-box { text-align:center; animation:fadeUp 0.4s ease; }
+  .success-icon { font-size:64px; margin-bottom:20px; }
+  .success-title { font-family:var(--font-display); font-size:36px; color:var(--green); letter-spacing:2px; margin-bottom:12px; }
+  .success-msg { font-size:15px; color:var(--muted); max-width:380px; line-height:1.6; }
+
+  /* TABELA COMISSÃO */
+  .com-table { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:13px; }
+  .com-table th { text-align:left; font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; padding:0 12px 10px 0; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .com-table td { padding:12px 12px 4px 0; color:var(--white); font-family:var(--font-mono); font-size:13px; }
+  .com-table td.yellow { color:var(--yellow); }
+
+
+  /* SELETOR DE MÊS */
+  .mes-selector { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .mes-selector select { background:var(--surface); border:1px solid var(--border); color:var(--white); border-radius:6px; padding:6px 12px; font-family:var(--font-mono); font-size:12px; cursor:pointer; outline:none; }
+  .mes-selector select:focus { border-color:var(--yellow); }
+  .mes-selector label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .mes-selector .btn-aplicar { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:6px 16px; font-family:var(--font-display); font-size:14px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
+  .mes-selector .btn-aplicar:hover { opacity:0.85; }
+  /* PAGINAÇÃO */
+  .pag-wrap { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+  .pag-info { font-family:var(--font-mono); font-size:10px; color:var(--muted); letter-spacing:1px; }
+  .pag-btns { display:flex; gap:6px; }
+  .pag-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); border-radius:4px; padding:4px 10px; font-family:var(--font-mono); font-size:11px; cursor:pointer; transition:all 0.2s; }
+  .pag-btn:hover:not(:disabled) { border-color:var(--yellow); color:var(--yellow); }
+  .pag-btn:disabled { opacity:0.3; cursor:not-allowed; }
 </style>
 </head>
 <body>
 
-<div class="loader" id="loader">
-  <div class="spin"></div>
-  <div class="ltext" id="ltext">Carregando dados...</div>
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-txt">Carregando dados...</div>
 </div>
 
-<div class="toasts" id="toasts"></div>
+<div id="dashboard">
 
-<header>
-  <div class="logo">Board <span>Academy</span> &mdash; Comissões</div>
-  <div class="hcontrols">
-    <div class="period-box">
-      <select id="selMes"></select>
-      <select id="selAno"></select>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="avatar" id="avatarEl">
+      <span id="avatarInitials">--</span>
     </div>
-    <button class="btn btn-outline" onclick="carregarDados()">↻ Atualizar</button>
-    <button class="btn btn-outline" onclick="salvar()">Salvar</button>
-    <button class="btn btn-amber" onclick="exportar()">↓ Excel</button>
-  </div>
-</header>
-
-<main>
-  <div class="stats-row" id="statsRow">
-    <div class="scard"><div class="scard-label">Total Comissão</div><div class="scard-value amber" id="sTotal">—</div></div>
-    <div class="scard"><div class="scard-label">Pessoas</div><div class="scard-value" id="sPessoas">—</div></div>
-    <div class="scard"><div class="scard-label">Validados</div><div class="scard-value green" id="sValid">—</div></div>
-    <div class="scard"><div class="scard-label">Ajustes</div><div class="scard-value red" id="sAjust">—</div></div>
-    <div class="scard"><div class="scard-label">Dias úteis</div><div class="scard-value" id="sDU">—</div></div>
-    <div class="scard"><div class="scard-label">Atualizado</div><div class="scard-value" id="sAt" style="font-size:13px">—</div></div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" onclick="setTab(this,'sdrs')">SDRs</button>
-    <button class="tab" onclick="setTab(this,'closers')">Closers</button>
-    <button class="tab" onclick="setTab(this,'lideranca')">Liderança</button>
-    <button class="tab" onclick="setTab(this,'bonus')">Bônus</button>
-    <button class="tab" onclick="setTab(this,'mdo')">MDO</button>
-  </div>
-
-  <div class="toolbar">
-    <input class="search" type="text" placeholder="Buscar..." id="search" oninput="renderTab()">
-    <span id="countLabel" style="font-size:12px;color:#aaa"></span>
-  </div>
-
-  <div id="tabContent"></div>
-</main>
-
-<!-- MODAL -->
-<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal">
-    <div class="mhead">
-      <div class="mhead-info">
-        <div class="mtitle" id="mTitle">—</div>
-        <div class="msub" id="mSub">—</div>
+    <div>
+      <div class="user-name" id="userName">--</div>
+      <div class="user-cargo" id="userCargo">--</div>
+      <div class="metas-row">
+        <div class="meta-tag" id="metaReuWrap">Meta Reunião <span id="metaReu">--</span></div>
+        <div class="meta-tag">Meta Financeira <span id="metaFin">--</span></div>
       </div>
-      <button class="mclose" onclick="closeModal()">✕</button>
     </div>
-    <div class="mbody" id="mBody"></div>
   </div>
+
+  <!-- Gauge centralizado -->
+  <div class="gauge-wrap">
+    <svg class="gauge-svg" viewBox="0 0 260 160">
+      <defs>
+        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#f5c400" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#f5c400"/>
+        </linearGradient>
+      </defs>
+      <!-- Track -->
+      <path d="M 20 140 A 110 110 0 0 1 240 140" fill="none" stroke="#222" stroke-width="14" stroke-linecap="round"/>
+      <!-- Fill -->
+      <path d="M 20 140 A 110 110 0 0 1 240 140" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"
+            stroke-dasharray="346" id="gaugeArc" stroke-dashoffset="346"/>
+      <!-- % no centro geométrico do arco (cx=130, cy=140 que é o centro do semicírculo) -->
+      <text id="gaugeVal" x="130" y="105" text-anchor="middle" dominant-baseline="middle"
+            font-family="'Bebas Neue', sans-serif" font-size="40" fill="#f5c400" letter-spacing="1">0%</text>
+      <text x="130" y="148" text-anchor="middle"
+            font-family="'DM Mono', monospace" font-size="10" fill="#888" letter-spacing="2">ATINGIMENTO GERAL</text>
+    </svg>
+  </div>
+
+  <div class="header-right">
+    <div class="logo-box">
+      <img
+        src="https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.png"
+        onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.jpg'"
+        alt="Board Academy"
+      >
+    </div>
+  </div>
+</div>
+
+<!-- ABAS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="mudarAba('dashboard', this)">Dashboard</button>
+  <button class="tab-btn" onclick="mudarAba('comissao', this)">Comissão</button>
+</div>
+
+<!-- ABA DASHBOARD -->
+<div id="aba-dashboard">
+
+<!-- SELETOR DE MÊS -->
+<div class="mes-selector">
+  <label>Período</label>
+  <select id="selMes">
+    <option value="5">Maio</option>
+    <option value="6">Junho</option>
+    <option value="7">Julho</option>
+    <option value="8">Agosto</option>
+    <option value="9">Setembro</option>
+    <option value="10">Outubro</option>
+    <option value="11">Novembro</option>
+    <option value="12">Dezembro</option>
+  </select>
+  <select id="selAno">
+    <option value="2026">2026</option>
+  </select>
+  <button class="btn-aplicar" onclick="aplicarFiltro()">Aplicar</button>
+  <div style="font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-left:8px;" id="mesAtual">--</div>
+</div>
+
+<!-- COMISSÃO — 4: sem projeção -->
+<div class="comissao-bar">
+  <span class="comissao-badge" id="comissaoBadge">--</span>
+  <div class="comissao-info">
+    Atingimento: <span id="comAtingimento">--</span> &nbsp;·&nbsp;
+    Acelerador: <span id="comAcelerador">--</span> &nbsp;·&nbsp;
+    Comissão estimada: <span id="comEstimada">--</span>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid" id="kpiGrid">
+  <div class="kpi-card">
+    <div class="kpi-label">Reuniões Agendadas</div>
+    <div class="kpi-value" id="kpiAgendadas">--</div>
+    <div class="kpi-sub">mês atual</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Reuniões Realizadas</div>
+    <div class="kpi-value" id="kpiRealizadas">--</div>
+    <div class="kpi-sub" id="kpiRealizadasSub">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">% Meta Reunião</div>
+    <div class="kpi-value yellow" id="kpiPctReu">--</div>
+    <div class="kpi-sub" id="kpiPctReuSub">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">R$ Ganhos</div>
+    <div class="kpi-value green" id="kpiValorBruto">--</div>
+    <div class="kpi-sub">valor bruto</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">R$ Ganhos Multiplicador</div>
+    <div class="kpi-value green" id="kpiValorMulti">--</div>
+    <div class="kpi-sub">com multiplicador</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">% Meta Financeira</div>
+    <div class="kpi-value yellow" id="kpiPctFin">--</div>
+    <div class="kpi-sub" id="kpiPctFinSub">--</div>
+  </div>
+  <!-- 6 - Qualificados em vez de desqualificados -->
+  <div class="kpi-card">
+    <div class="kpi-label">% Qualificadas</div>
+    <div class="kpi-value green" id="kpiQualif">--</div>
+    <div class="kpi-sub">das reuniões</div>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="charts-row" id="chartsRow">
+  <div class="chart-card">
+    <div class="chart-title">Reuniões Agendadas</div>
+    <div class="chart-canvas-wrap"><canvas id="chartAgendadas"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Reuniões Realizadas</div>
+    <div class="chart-canvas-wrap"><canvas id="chartRealizadas"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Valores Ganhos (R$)</div>
+    <div class="chart-canvas-wrap"><canvas id="chartValores"></canvas></div>
+  </div>
+</div>
+
+<!-- TABLES -->
+<div class="tables-row" id="tablesRow">
+  <div class="table-card">
+    <div class="table-title">Próximas Reuniões</div>
+    <table class="data-table">
+      <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
+      <tbody id="tblProximas"></tbody>
+    </table>
+  </div>
+  <div class="table-card">
+    <div class="table-title">Reuniões Ganhas</div>
+    <table class="data-table">
+      <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
+      <tbody id="tblGanhas"></tbody>
+    </table>
+  </div>
+  <!-- 9 - Desq: só link e proprietário -->
+  <div class="table-card">
+    <div class="table-title">Reuniões Desqualificadas</div>
+    <table class="data-table">
+      <thead><tr><th>Lead</th><th>Desqualificado por</th></tr></thead>
+      <tbody id="tblDesq"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /aba-dashboard -->
+
+<!-- ABA COMISSÃO -->
+<div id="aba-comissao" style="display:none;">
+  <div class="formula-box">
+    <div class="formula-label">Como sua comissão é calculada</div>
+    <div class="formula" style="margin-top:6px;">
+      <span>% Meta Final</span> × <span>Acelerador</span> × <span>Rampagem</span> × <span>Variável OTE</span>
+    </div>
+  </div>
+  <div id="listaMeses"><div class="com-empty">Carregando histórico...</div></div>
+</div>
+
+<!-- MODAL CONFIRMAÇÃO -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Confirmar Comissão</div>
+    <div class="modal-body">Você confirma o recebimento de:</div>
+    <div class="modal-valor" id="modalValor">--</div>
+    <div class="modal-mes" id="modalMes">--</div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-ok" id="btnOk" onclick="confirmarDefinitivo()">Sim, confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-overlay hidden" id="successOverlay">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Comissão Confirmada!</div>
+    <div class="success-msg">Aguarde o e-mail do financeiro para geração da nota.</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="footer-label">Inteligência Comercial · Board Academy</div>
+    <a id="tabelaPriceWrap" href="https://inspiring-marshmallow-1ba.netlify.app/" target="_blank" style="display:none;font-family:var(--font-mono);font-size:10px;color:var(--yellow);text-decoration:none;letter-spacing:1px;border:1px solid var(--yellow);padding:4px 12px;border-radius:4px;">Tabela Price →</a>
+  </div>
+  <a href="/logout" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-decoration:none;letter-spacing:2px;text-transform:uppercase;">Sair →</a>
+  <div class="footer-date" id="footerDate">--</div>
+</div>
+
 </div>
 
 <script>
-const MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+Chart.register(ChartDataLabels);
 
-// Excluídos
-const EXCLUIR_SQUADS = ['zenite','vanguard','inteligencia comercial','inteligência comercial'];
-const EXCLUIR_NOMES  = ['farias souza'];
-function excluido(p) {
-  if (!p) return true;
-  const nn = (p.nome_norm||'').toLowerCase();
-  const sq = (p.squad||'').toLowerCase();
-  if (EXCLUIR_NOMES.some(n => nn.includes(n))) return true;
-  if (EXCLUIR_SQUADS.some(s => sq.includes(s))) return true;
-  if (nn.startsWith('lic') || sq.startsWith('lic')) return true;
-  return false;
+const API_URL_BASE = '/api/sdr';
+const API_CLOSER_BASE = '/api/closer';
+let API_URL = '/api/sdr';
+
+function getApiUrl(base) {
+  const mes = document.getElementById('selMes')?.value || new Date().getMonth()+1;
+  const ano = document.getElementById('selAno')?.value || new Date().getFullYear();
+  return `${base}?mes=${mes}&ano=${ano}`;
 }
 
-let dados = null;
-let tabAtiva = 'sdrs';
-let ajNomeNorm = null;
+function aplicarFiltro() {
+  // Mostra loading
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loading').style.display   = 'flex';
+  document.querySelector('.loading-txt').textContent = 'Buscando dados...';
 
-// Init period selectors
-(function(){
-  const hoje = new Date();
-  let mes = hoje.getMonth(); // mês anterior
-  let ano = hoje.getFullYear();
-  if (mes === 0) { mes = 12; ano--; }
-
-  const sm = document.getElementById('selMes');
-  MESES.slice(1).forEach((m,i) => {
-    const o = document.createElement('option');
-    o.value = i+1; o.textContent = m;
-    if (i+1 === mes) o.selected = true;
-    sm.appendChild(o);
-  });
-
-  const sa = document.getElementById('selAno');
-  for (let y = ano; y >= ano-3; y--) {
-    const o = document.createElement('option');
-    o.value = y; o.textContent = y;
-    if (y === ano) o.selected = true;
-    sa.appendChild(o);
-  }
-
-  sm.addEventListener('change', carregarDados);
-  sa.addEventListener('change', carregarDados);
-})();
-
-function getMesAno() {
-  return {
-    mes: +document.getElementById('selMes').value,
-    ano: +document.getElementById('selAno').value
-  };
-}
-
-function showLoader(t='Carregando...') {
-  document.getElementById('ltext').textContent = t;
-  document.getElementById('loader').classList.remove('gone');
-}
-function hideLoader() { document.getElementById('loader').classList.add('gone'); }
-
-function toast(msg, tipo='ok') {
-  const c = document.getElementById('toasts');
-  const el = document.createElement('div');
-  el.className = 'toast ' + tipo;
-  el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
-function fBRL(v) {
-  return 'R$ ' + (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-function fPct(v) { return (parseFloat(v)||0).toFixed(1) + '%'; }
-
-function corPct(v) {
-  const n = parseFloat(v)||0;
-  if (n >= 100) return 'pct-green';
-  if (n >= 86)  return 'pct-yellow';
-  if (n >= 60)  return 'pct-orange';
-  if (n > 0)    return 'pct-red';
-  return 'pct-gray';
-}
-
-function roleBadge(role) {
-  const map = {
-    sdr:'badge-sdr',closer:'badge-closer',lider_sdr:'badge-lider',
-    head:'badge-head',gerente:'badge-gerente',inside:'badge-inside'
-  };
-  const labels = {
-    sdr:'SDR',closer:'Closer',lider_sdr:'Líder SDR',
-    head:'Head',gerente:'Gerente',inside:'Inside'
-  };
-  return `<span class="badge ${map[role]||'badge-sdr'}">${labels[role]||role}</span>`;
-}
-
-async function carregarDados() {
-  const {mes,ano} = getMesAno();
-  showLoader(`Puxando ${MESES[mes]} ${ano}...`);
-  try {
-    const r = await fetch(`/api/comissoes?mes=${mes}&ano=${ano}`);
-    const d = await r.json();
-    if (d.erro) throw new Error(d.erro);
-    dados = d;
-    atualizarStats();
-    renderTab();
-  } catch(e) {
-    toast('Erro: '+e.message, 'err');
-  } finally {
-    hideLoader();
-  }
-}
-
-function atualizarStats() {
-  if (!dados) return;
-  const ps = (dados.pessoas||[]).filter(p => !excluido(p));
-  const total = ps.reduce((s,p)=>s+(p.comissao_final||0),0);
-  document.getElementById('sTotal').textContent = fBRL(total);
-  document.getElementById('sPessoas').textContent = ps.length;
-  document.getElementById('sValid').textContent = ps.filter(p=>p.validado).length + '/' + ps.length;
-  document.getElementById('sAjust').textContent = ps.filter(p=>p.ajustes&&p.ajustes.length).length;
-  document.getElementById('sDU').textContent = dados.du_total||'—';
-  document.getElementById('sAt').textContent = dados.atualizado_em||'—';
-}
-
-function setTab(el, tab) {
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  tabAtiva = tab;
-  renderTab();
-}
-
-function pessoasDaTab() {
-  if (!dados) return [];
-  const busca = document.getElementById('search').value.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  let ps = (dados.pessoas||[]).filter(p => !excluido(p));
-
-  if (tabAtiva === 'sdrs')
-    ps = ps.filter(p => p.role === 'sdr');
-  else if (tabAtiva === 'closers')
-    ps = ps.filter(p => p.role === 'closer' || p.role === 'inside');
-  else if (tabAtiva === 'lideranca')
-    ps = ps.filter(p => ['lider_sdr','head','gerente'].includes(p.role));
-  else if (tabAtiva === 'bonus')
-    ps = ps.filter(p => !['lider_sdr','head','gerente'].includes(p.role) && (parseFloat(p.pct_atingimento)||0) > 69.9999);
-
-  if (busca) ps = ps.filter(p =>
-    (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(busca) ||
-    (p.squad||'').toLowerCase().includes(busca)
-  );
-  return ps;
-}
-
-function renderTab() {
-  const c = document.getElementById('tabContent');
-  if (!dados) { c.innerHTML = '<div class="empty">Nenhum dado carregado.</div>'; return; }
-
-  if (tabAtiva === 'bonus') { renderBonus(); return; }
-  if (tabAtiva === 'mdo') { renderMDO(); return; }
-
-  const ps = pessoasDaTab();
-  document.getElementById('countLabel').textContent = ps.length + ' pessoa(s)';
-
-  if (!ps.length) {
-    c.innerHTML = '<div class="empty">Nenhuma pessoa encontrada.</div>';
-    return;
-  }
-
-  // Agrupa por squad
-  const grupos = {};
-  ps.forEach(p => {
-    const k = p.squad||'—';
-    if (!grupos[k]) grupos[k] = [];
-    grupos[k].push(p);
-  });
-
-  // Ordena squads
-  const order = ['Sniper','Elite','Olympus','LATAM','Orion','Gerência'];
-  const squads = Object.keys(grupos).sort((a,b) => {
-    const ia = order.indexOf(a), ib = order.indexOf(b);
-    if (ia !== -1 && ib !== -1) return ia - ib;
-    if (ia !== -1) return -1;
-    if (ib !== -1) return 1;
-    return a.localeCompare(b);
-  });
-
-  let html = '';
-  squads.forEach(squad => {
-    const membros = grupos[squad];
-    html += `<div class="squad-block">
-      <div class="squad-title">${squad}</div>
-      <table>
-        <thead>${cabecalhoTab()}</thead>
-        <tbody>`;
-    membros.forEach(p => { html += renderLinha(p); });
-    html += `</tbody></table></div>`;
-  });
-
-  c.innerHTML = html;
-}
-
-function cabecalhoTab() {
-  if (tabAtiva === 'sdrs') {
-    return `<tr>
-      <th style="width:200px">Nome</th>
-      <th>Role</th>
-      <th class="right">Reuniões</th>
-      <th class="right">Meta Reu</th>
-      <th class="right">% Reu</th>
-      <th class="right">Financeiro</th>
-      <th class="right">% Fin</th>
-      <th class="right col-ating">% Ating</th>
-      <th class="right">Aceler</th>
-      <th class="right">Ramp</th>
-      <th class="right">Comissão</th>
-      <th style="text-align:center">Eleg.</th>
-      <th>Status</th>
-      <th></th>
-    </tr>`;
-  } else if (tabAtiva === 'closers') {
-    return `<tr>
-      <th style="width:200px">Nome</th>
-      <th>Role</th>
-      <th class="right">Financeiro</th>
-      <th class="right">Meta Fin</th>
-      <th class="right">% Fin</th>
-      <th class="right col-ating">% Ating</th>
-      <th class="right">Aceler</th>
-      <th class="right">Ramp</th>
-      <th class="right">Comissão</th>
-      <th style="text-align:center">Eleg.</th>
-      <th>Status</th>
-      <th></th>
-    </tr>`;
+  if (session_tipo === 'closer') {
+    fetchCloser();
   } else {
-    return `<tr>
-      <th style="width:200px">Nome</th>
-      <th>Role</th>
-      <th>Tipo Cálculo</th>
-      <th class="right col-ating">% Ating</th>
-      <th class="right">Aceler</th>
-      <th class="right">Ramp</th>
-      <th class="right">Var OTE</th>
-      <th class="right">Comissão</th>
-      <th style="text-align:center">Eleg.</th>
-      <th>Status</th>
-      <th></th>
-    </tr>`;
+    fetchDados();
+  }
+}
+const REFRESH_MS = 5 * 60 * 1000;
+const PIPE_URL   = 'https://boardacademy.pipedrive.com/deal/';
+
+let chartAg = null, chartRe = null, chartVa = null;
+
+function carregarFoto(fotoUrl) {
+  if (fotoUrl) {
+    document.getElementById('avatarEl').innerHTML = `<img src="${fotoUrl}">`;
   }
 }
 
-function renderLinha(p) {
-  const hasAjuste = p.ajustes && p.ajustes.length > 0;
-  const cls = p.validado ? 'validado' : hasAjuste ? 'ajustado' : '';
-  const elegivel = (parseFloat(p.pct_atingimento)||0) >= 60;
-  const statusDot = p.validado ? 'dot-green' : hasAjuste ? 'dot-yellow' : 'dot-gray';
-  const statusTxt = p.validado ? 'Validado' : hasAjuste ? 'Ajustado' : 'Pendente';
-  const elegDot = elegivel
-    ? `<span class="dot dot-green" title="Elegível" style="box-shadow:0 0 0 2px #dcfce7"></span>`
-    : `<span class="dot" style="background:#d1d5db;opacity:.45" title="Não elegível"></span>`;
-  const comCls   = hasAjuste ? 'comval ajustado' : 'comval';
-  const valBtn   = p.validado ? '' : `<button class="act-btn green" onclick="validar('${p.nome_norm}',event)">✓</button>`;
+const fmtMoney = v => {
+  if (!v && v !== 0) return 'R$ 0';
+  const n = Number(v);
+  if (isNaN(n)) return 'R$ 0';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+const fmtPct  = v => v.toFixed(1) + '%';
 
-  if (tabAtiva === 'sdrs') {
-    return `<tr class="${cls}" onclick="abrirModal('${p.nome_norm}')">
-      <td style="font-weight:500">${p.nome}</td>
-      <td>${roleBadge(p.role)}</td>
-      <td class="right">${p.reu_realizadas||0}</td>
-      <td class="right muted">${p.meta_reu||0}</td>
-      <td class="right"><span class="pct ${corPct(p.pct_reu)}">${fPct(p.pct_reu)}</span></td>
-      <td class="right">${fBRL(p.valor_ganho_multi)}</td>
-      <td class="right"><span class="pct ${corPct(p.pct_fin)}">${fPct(p.pct_fin)}</span></td>
-      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
-      <td class="right muted">x${p.acelerador||0}</td>
-      <td class="right muted">${fPct((p.rampagem||1)*100)}</td>
-      <td class="right"><span class="${comCls}">${fBRL(p.comissao_final)}</span></td>
-      <td style="text-align:center">${elegDot}</td>
-      <td><span class="dot ${statusDot}"></span>${statusTxt}</td>
-      <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="act-btn" onclick="abrirAjuste('${p.nome_norm}')">✎</button>
-        ${valBtn}
-      </td>
-    </tr>`;
-  } else if (tabAtiva === 'closers') {
-    return `<tr class="${cls}" onclick="abrirModal('${p.nome_norm}')">
-      <td style="font-weight:500">${p.nome}</td>
-      <td>${roleBadge(p.role)}</td>
-      <td class="right">${fBRL(p.valor_ganho_multi)}</td>
-      <td class="right muted">${fBRL(p.meta_fin)}</td>
-      <td class="right"><span class="pct ${corPct(p.pct_fin)}">${fPct(p.pct_fin)}</span></td>
-      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
-      <td class="right muted">x${p.acelerador||0}</td>
-      <td class="right muted">${fPct((p.rampagem||1)*100)}</td>
-      <td class="right"><span class="${comCls}">${fBRL(p.comissao_final)}</span></td>
-      <td style="text-align:center">${elegDot}</td>
-      <td><span class="dot ${statusDot}"></span>${statusTxt}</td>
-      <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="act-btn" onclick="abrirAjuste('${p.nome_norm}')">✎</button>
-        ${valBtn}
-      </td>
-    </tr>`;
-  } else {
-    return `<tr class="${cls}" onclick="abrirModal('${p.nome_norm}')">
-      <td style="font-weight:500">${p.nome}</td>
-      <td>${roleBadge(p.role)}</td>
-      <td class="muted" style="font-size:12px">${p.detalhes?.tipo_calculo||'—'}</td>
-      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
-      <td class="right muted">x${p.acelerador||0}</td>
-      <td class="right muted">${fPct((p.rampagem||1)*100)}</td>
-      <td class="right muted">${fBRL(p.ote?.variavel)}</td>
-      <td class="right"><span class="${comCls}">${fBRL(p.comissao_final)}</span></td>
-      <td style="text-align:center">${elegDot}</td>
-      <td><span class="dot ${statusDot}"></span>${statusTxt}</td>
-      <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="act-btn" onclick="abrirAjuste('${p.nome_norm}')">✎</button>
-        ${valBtn}
-      </td>
-    </tr>`;
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+// 8 - data em dd/mm
+const fmtDate = s => {
+  if (!s) return '--';
+  const parts = s.substring(0,10).split('-');
+  return `${parts[2]}/${parts[1]}`;
+};
+// 7 - link deal
+const dealLink = id => id
+  ? `<a class="deal-link" href="${PIPE_URL}${id}" target="_blank">#${id}</a>`
+  : '--';
+
+// 2 - Gauge com novo viewBox
+function atualizarGauge(pct) {
+  const total = 346;
+  const fill  = Math.min(pct / 100, 1) * total;
+  document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', total - fill);
+  document.getElementById('gaugeVal').textContent = fmtPct(pct);
+}
+
+const commonOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1, titleColor:'#f5c400', bodyColor:'#aaa', titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'DM Mono',size:11} },
+    datalabels: { color:'#888', font:{family:'DM Mono',size:10}, anchor:'end', align:'top', offset:2, formatter: v => v === 0 ? '' : v }
+  },
+  scales: {
+    x: { grid:{color:'#1a1a1a'}, ticks:{color:'#444',font:{family:'DM Mono',size:10}} },
+    y: { grid:{color:'#1a1a1a'}, ticks:{color:'#444',font:{family:'DM Mono',size:10}}, beginAtZero:true }
   }
-}
+};
 
-function abrirModal(nome_norm) {
-  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
-  if (!p) return;
-
-  document.getElementById('mTitle').textContent = p.nome;
-  document.getElementById('mSub').textContent = `${p.squad} · ${p.cargo} · ${p.detalhes?.tipo_calculo||''}`;
-
-  let h = '';
-
-  // Fórmula
-  h += `<div class="msection"><h4>Composição da Comissão</h4><div class="formula">`;
-  if (p.role === 'sdr') {
-    h += `Ating <span class="op">=</span> <span class="hl">70%</span> × <span class="hl">${fPct(p.pct_reu)}</span> <span class="op">+</span> <span class="hl">30%</span> × <span class="hl">${fPct(p.pct_fin)}</span> <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
-  } else if (p.role === 'head') {
-    h += `Ating <span class="op">=</span> <span class="hl">50%</span> × <span class="hl">${fPct(p.pct_closer)}</span> <span class="op">(closer)</span> <span class="op">+</span> <span class="hl">50%</span> × <span class="hl">${fPct(p.pct_sdr)}</span> <span class="op">(sdr)</span> <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
-  } else if (p.role === 'lider_sdr') {
-    h += `Ating <span class="op">=</span> <span class="hl">70%</span> × <span class="hl">${fPct(p.pct_reu)}</span> <span class="op">(reu time)</span> <span class="op">+</span> <span class="hl">30%</span> × <span class="hl">${fPct(p.pct_fin)}</span> <span class="op">(fin time)</span> <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
-  } else if (p.tipo === 'vp') {
-    h += `VP Total <span class="op">=</span> <span class="hl">${fBRL(p.valor_presente)}</span> · % Comissão <span class="op">=</span> <span class="hl">${fPct(p.pct_comissao_vp)}</span>\n`;
-    h += `Comissão <span class="op">=</span> <span class="hl">${fBRL(p.valor_presente)}</span> × <span class="hl">${fPct(p.pct_comissao_vp)}</span> × <span class="hl">${fPct((p.rampagem||1)*100)}</span> <span class="op">=</span> <span class="res">${fBRL(p.comissao_calc)}</span>`;
-    h += `</div></div>`;
-    // Pula para KPIs direto
-    h += buildKVSection(p) + buildAjustesSection(p) + buildStatusSection(p);
-    document.getElementById('mBody').innerHTML = h;
-    document.getElementById('overlay').classList.add('open');
-    return;
-  } else {
-    h += `Ating <span class="op">=</span> <span class="res">${fPct(p.pct_atingimento)}</span>\n`;
+function buildChart(id, type, labels, data, color, isMoney=false) {
+  const ctx  = document.getElementById(id);
+  const opts = JSON.parse(JSON.stringify(commonOpts));
+  if (isMoney) {
+    opts.plugins.datalabels.formatter = v => v === 0 ? '' : (v/1000).toFixed(1).replace('.0','') + 'K';
+    opts.scales.y.ticks.callback = v => 'R$' + (v/1000).toFixed(0) + 'k';
   }
-  if (p.tipo !== 'vp') {
-    h += `Comissão <span class="op">=</span> <span class="hl">${fBRL(p.ote?.variavel||0)}</span> × <span class="hl">${fPct(p.pct_atingimento)}</span> × <span class="hl">x${p.acelerador||0}</span> × <span class="hl">${fPct((p.rampagem||1)*100)}</span> <span class="op">=</span> <span class="res">${fBRL(p.comissao_calc)}</span>`;
-  }
-  h += `</div></div>`;
-  h += buildKVSection(p) + buildAjustesSection(p) + buildStatusSection(p);
-
-  document.getElementById('mBody').innerHTML = h;
-  document.getElementById('overlay').classList.add('open');
+  const dataset = type === 'bar'
+    ? { data, backgroundColor: color + '44', borderColor: color, borderWidth:1, borderRadius:3 }
+    : { data, borderColor: color, backgroundColor: color + '11', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor: color };
+  return new Chart(ctx, { type, data:{ labels, datasets:[dataset] }, options: opts });
 }
 
-function buildKVSection(p) {
-  const items = [];
-  if (p.role === 'sdr') {
-    items.push(['Reuniões',p.reu_realizadas||0],['Meta Reu',p.meta_reu||0],
-      ['% Reu',fPct(p.pct_reu)],['Financeiro',fBRL(p.valor_ganho_multi)],
-      ['Meta Fin',fBRL(p.meta_fin)],['% Fin',fPct(p.pct_fin)]);
-  } else if (p.role === 'lider_sdr') {
-    items.push(['Reu Time',p.t_reu_val||0],['Meta Reu Time',p.t_meta_reu||0],
-      ['Fin Time',fBRL(p.t_fin_val)],['Meta Fin Time',fBRL(p.t_meta_fin)]);
-  } else if (p.tipo === 'vp') {
-    items.push(['Fin (multi)',fBRL(p.valor_ganho_multi)],['Valor Presente',fBRL(p.valor_presente)],
-      ['Meta Fin',fBRL(p.meta_fin)],['% Comissão VP',fPct(p.pct_comissao_vp)]);
-  } else if (p.role === 'head') {
-    items.push(['% Closer',fPct(p.pct_closer)],['% SDR',fPct(p.pct_sdr)]);
-  } else {
-    items.push(['Fin (multi)',fBRL(p.valor_ganho_multi)],['Meta Fin',fBRL(p.meta_fin)]);
-  }
-  items.push(
-    ['OTE Fixo',fBRL(p.ote?.fixo)],['OTE Variável',fBRL(p.ote?.variavel)],
-    ['Acelerador',`x${p.acelerador||0}`],['Rampagem',fPct((p.rampagem||1)*100)],
-    ['Comissão Calc.',fBRL(p.comissao_calc)],['Comissão Final',fBRL(p.comissao_final)],
-  );
-  let h = `<div class="msection"><h4>Números do Período</h4><div class="kv-grid">`;
-  items.forEach(([k,v]) => {
-    h += `<div class="kv-item"><div class="kv-key">${k}</div><div class="kv-val">${v}</div></div>`;
-  });
-  return h + `</div></div>`;
+// 8 - formato dd/mm nos gráficos
+function fmtLabel(iso) {
+  const p = iso.split('-');
+  return `${p[2]}/${p[1]}`;
 }
 
-function buildAjustesSection(p) {
-  if (!p.ajustes || !p.ajustes.length) return '';
-  let h = `<div class="msection"><h4>Histórico de Ajustes</h4>`;
-  p.ajustes.forEach(aj => {
-    h += `<div class="ajlog">
-      <div class="ajl-header">${aj.data} · ${aj.campo}</div>
-      <div class="ajl-text">${aj.valor_anterior} → ${aj.valor_novo}</div>
-      <div class="ajl-motivo">Motivo: ${aj.motivo}</div>
-    </div>`;
-  });
-  return h + `</div>`;
+function atualizarCharts(graficos) {
+  const agLabels = graficos.serieAgendadas.map(x => fmtLabel(x.data));
+  const agData   = graficos.serieAgendadas.map(x => x.qtd);
+  const reLabels = graficos.serieRealizadas.map(x => fmtLabel(x.data));
+  const reData   = graficos.serieRealizadas.map(x => x.qtd);
+  const vaLabels = graficos.serieValores.map(x => fmtLabel(x.data));
+  const vaData   = graficos.serieValores.map(x => x.valor);
+
+  if (chartAg) chartAg.destroy();
+  if (chartRe) chartRe.destroy();
+  if (chartVa) chartVa.destroy();
+
+  chartAg = buildChart('chartAgendadas', 'line', agLabels, agData, '#f5c400');
+  chartRe = buildChart('chartRealizadas', 'line', reLabels, reData, '#2adf8a');
+  chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
 }
 
-function buildStatusSection(p) {
-  if (p.validado) {
-    return `<div class="msection"><h4>Status</h4><p style="color:#1a7f4b;font-size:13px">✓ Validado em ${p.validado_em}</p></div>`;
-  }
-  return `<div class="msection"><h4>Status</h4>
-    <button class="btn btn-green" onclick="validar('${p.nome_norm}',null);closeModal()">✓ Marcar como Validado</button>
-  </div>`;
-}
-
-function closeModal() {
-  document.getElementById('overlay').classList.remove('open');
-}
-
-function abrirAjuste(nome_norm) {
-  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
-  if (!p) return;
-  ajNomeNorm = nome_norm;
-
-  document.getElementById('mTitle').textContent = p.nome + ' — Ajuste Manual';
-  document.getElementById('mSub').textContent = `${p.squad} · ${p.cargo}`;
-
-  document.getElementById('mBody').innerHTML = `
-    <div class="ajform">
-      <label class="flabel">Campo</label>
-      <select class="fselect" id="ajCampo" onchange="syncValAtual('${nome_norm}')">
-        <option value="pct_atingimento">% Atingimento</option>
-        <option value="comissao_final">Comissão Final (valor direto)</option>
-        <option value="rampagem">Rampagem (0–1, ex: 0.75)</option>
-        <option value="acelerador">Acelerador (ex: 0.7)</option>
-      </select>
-      <label class="flabel">Valor atual</label>
-      <input class="finput" id="ajAtual" readonly style="opacity:.5;margin-bottom:12px">
-      <label class="flabel">Novo valor</label>
-      <input class="finput" type="number" id="ajNovo" step="0.01">
-      <label class="flabel">Motivo (obrigatório)</label>
-      <input class="finput" type="text" id="ajMotivo" placeholder="Ex: Acordo aprovado pela gestão">
-      <div class="factions">
-        <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-red" onclick="confirmarAjuste()">Aplicar</button>
-      </div>
-    </div>`;
-
-  document.getElementById('overlay').classList.add('open');
-  syncValAtual(nome_norm);
-}
-
-function syncValAtual(nome_norm) {
-  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
-  if (!p) return;
-  const campo = document.getElementById('ajCampo').value;
-  document.getElementById('ajAtual').value = p[campo] ?? '—';
-}
-
-async function confirmarAjuste() {
-  const motivo = document.getElementById('ajMotivo').value.trim();
-  if (!motivo) { toast('Informe o motivo', 'warn'); return; }
-  const campo  = document.getElementById('ajCampo').value;
-  const valor  = parseFloat(document.getElementById('ajNovo').value);
-  if (isNaN(valor)) { toast('Valor inválido', 'warn'); return; }
-  const {mes,ano} = getMesAno();
-  showLoader('Salvando ajuste...');
-  try {
-    const r = await fetch('/api/ajuste', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({mes,ano,nome_norm:ajNomeNorm,campo,valor,motivo}),
-    });
-    const d = await r.json();
-    if (d.erro) throw new Error(d.erro);
-    dados = d.data;
-    atualizarStats(); renderTab();
-    toast('Ajuste aplicado!', 'ok');
-    closeModal();
-  } catch(e) { toast('Erro: '+e.message,'err'); }
-  finally { hideLoader(); }
-}
-
-async function validar(nome_norm, ev) {
-  if (ev) ev.stopPropagation();
-  const {mes,ano} = getMesAno();
-  try {
-    const r = await fetch('/api/validar',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mes,ano,nome_norm}),
-    });
-    const d = await r.json();
-    if (d.erro) throw new Error(d.erro);
-    const p = dados?.pessoas?.find(x=>x.nome_norm===nome_norm);
-    if (p) { p.validado=true; p.validado_em=new Date().toLocaleString('pt-BR'); }
-    atualizarStats(); renderTab();
-    toast('Validado!','ok');
-  } catch(e) { toast('Erro: '+e.message,'err'); }
-}
-
-async function salvar() {
-  if (!dados) { toast('Sem dados','warn'); return; }
-  showLoader('Salvando...');
-  try {
-    const r = await fetch('/api/salvar',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(dados),
-    });
-    const d = await r.json();
-    if (d.erro) throw new Error(d.erro);
-    toast('Período salvo!','ok');
-  } catch(e) { toast('Erro: '+e.message,'err'); }
-  finally { hideLoader(); }
-}
-
-function exportar() {
-  const {mes,ano} = getMesAno();
-  window.location.href = `/api/exportar?mes=${mes}&ano=${ano}`;
-}
-
-
-function renderBonus() {
-  const cont = document.getElementById('tabContent');
-  const busca = document.getElementById('search').value.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  let ps = (dados.pessoas||[])
-    .filter(p => !excluido(p))
-    .filter(p => !['lider_sdr','head','gerente'].includes(p.role))
-    .filter(p => (parseFloat(p.pct_atingimento)||0) > 69.9999);
-  if (busca) ps = ps.filter(p =>
-    (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(busca) ||
-    (p.squad||'').toLowerCase().includes(busca)
-  );
-  document.getElementById('countLabel').textContent = ps.length + ' elegível(is)';
-  if (!ps.length) {
-    cont.innerHTML = '<div class="empty">Nenhuma pessoa elegível ao bônus (atingimento > 70%).</div>';
-    return;
-  }
-  // Ordena por atingimento desc
-  ps = [...ps].sort((a,b) => (parseFloat(b.pct_atingimento)||0) - (parseFloat(a.pct_atingimento)||0));
-
-  let html = `<div class="squad-block"><table>
-    <thead><tr>
-      <th style="width:200px">Nome</th>
-      <th>Equipe</th>
-      <th>Role</th>
-      <th class="right col-ating">% Atingimento</th>
-      <th class="right">Bônus</th>
-      <th></th>
-    </tr></thead><tbody>`;
-
-  ps.forEach(p => {
-    const bonus = p.bonus || '';
-    const bonusSaved = bonus !== '' ? 'bonus-saved' : '';
-    html += `<tr>
-      <td style="font-weight:500">${p.nome}</td>
-      <td>${p.squad||'—'}</td>
-      <td>${roleBadge(p.role)}</td>
-      <td class="right col-ating"><span class="pct ${corPct(p.pct_atingimento)}">${fPct(p.pct_atingimento)}</span></td>
-      <td class="right">
-        <input class="bonus-input ${bonusSaved}" type="number" min="0" step="0.01"
-          placeholder="R$ 0,00"
-          value="${bonus}"
-          data-norm="${p.nome_norm}"
-          onchange="salvarBonus('${p.nome_norm}', this)"
-          onblur="salvarBonus('${p.nome_norm}', this)">
-      </td>
-      <td style="font-size:11px;color:#aaa">${p.bonus_obs||''}</td>
-    </tr>`;
-  });
-
-  html += `</tbody></table>
-    <div style="margin-top:16px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:12px;font-weight:500;color:#166534">Total Bônus</span>
-      <span style="font-size:16px;font-weight:600;color:#166534;font-variant-numeric:tabular-nums" id="totalBonus">${fBRL(ps.reduce((s,p)=>s+(parseFloat(p.bonus)||0),0))}</span>
-    </div>
-  </div>`;
-  cont.innerHTML = html;
-}
-
-function salvarBonus(nome_norm, input) {
-  const valor = parseFloat(input.value) || 0;
-  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
-  if (!p) return;
-  p.bonus = valor;
-  input.classList.add('bonus-saved');
-  // Atualiza total
-  const total = (dados.pessoas||[]).reduce((s,x)=>s+(parseFloat(x.bonus)||0),0);
-  const el = document.getElementById('totalBonus');
-  if (el) el.textContent = fBRL(total);
-}
-
-
-function renderMDO() {
-  const cont = document.getElementById('tabContent');
-  const busca = document.getElementById('search').value.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-
-  // Todos exceto "Inteligência Comercial" e "LIC" e "Farias Souza" — já filtrado por excluido()
-  // Mas na MDO mostramos TODOS (inclusive liderança), exceto os excluídos
-  let ps = (dados.pessoas||[]).filter(p => !excluido(p));
-  if (busca) ps = ps.filter(p =>
-    (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(busca) ||
-    (p.squad||'').toLowerCase().includes(busca)
-  );
-
-  const squadOrder = ['Sniper','Elite','Olympus','LATAM','Orion','Gerência'];
-  const roleOrder  = {gerente:0,head:1,lider_sdr:2,closer:3,inside:3,sdr:4};
-  ps = [...ps].sort((a,b)=>{
-    const si=squadOrder.indexOf(a.squad||''), sj=squadOrder.indexOf(b.squad||'');
-    const sc=(si===-1&&sj===-1)?(a.squad||'').localeCompare(b.squad||''):(si===-1?1:sj===-1?-1:si-sj);
-    if(sc!==0) return sc;
-    return (roleOrder[a.role]??5)-(roleOrder[b.role]??5);
-  });
-
-  document.getElementById('countLabel').textContent = ps.length + ' pessoa(s)';
-
-  const {mes,ano} = getMesAno();
-  const MESES_NOME=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const du = dados.du_total||'—';
-
-  // Agrega por squad para linha de total por time
-  // squad -> { tt, vendas_closers }
-  const squadAgg = {};
-  ps.forEach(p => {
-    const sq = p.squad||'—';
-    if (!squadAgg[sq]) squadAgg[sq] = {tt:0, vendas:0};
-    const fp = parseFloat(p.flash_premiacao)||0;
-    const ff = parseFloat(p.flash_fixo)||0;
-    const tt = (p.ote?.fixo||0)+(p.comissao_final||0)+(p.bonus||0)+fp+ff;
-    squadAgg[sq].tt += tt;
-    // Só closer/inside contribuem para o denominador do MDO
-    if (['closer','inside'].includes(p.role)) {
-      squadAgg[sq].vendas += (p.valor_ganho_multi||0);
+function renderTabela(tbodyId, dados, renderFn) {
+  // Suporte a chamada antiga (array de strings) e nova (array de objetos + fn)
+  if (typeof dados === 'string' || (Array.isArray(dados) && typeof dados[0] === 'string')) {
+    const el = document.getElementById(tbodyId);
+    if (!el) return;
+    const arr = Array.isArray(dados) ? dados : [dados];
+    if (!arr.length) {
+      el.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+      return;
     }
-  });
+    el.innerHTML = arr.join('');
+    return;
+  }
+  // Nova: com paginação
+  if (!renderFn) return;
+  pagInit(tbodyId, dados || [], renderFn);
+}
 
-  // Virtuais: Time Aquisição e Time Inteligência
-  const virtuais = [
-    {key:'aquisicao',   label:'Time Aquisição'},
-    {key:'inteligencia',label:'Time de Inteligência'},
-  ];
+function render(d) {
+  const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
+  setText('avatarInitials', iniciais);
+  setText('userName', d.colaborador.nome);
+  setText('userCargo', `${d.colaborador.cargo} · ${d.colaborador.time}`);
+  setText('metaReu', d.metas.meta_reu);
+  setText('metaFin', fmtMoney(d.metas.meta_fin));
 
-  let html = `<div class="mdo-wrap"><table class="mdo-table">
-    <colgroup>
-      <col style="width:38px"><col style="width:52px"><col style="width:36px">
-      <col style="width:130px"><col style="width:70px"><col style="width:80px">
-      <col style="width:90px"><col style="width:72px"><col style="width:72px">
-      <col style="width:80px"><col style="width:72px">
-      <col style="width:80px"><col style="width:72px">
-      <col style="width:88px"><col style="width:88px">
-      <col style="width:82px">
-      <col style="width:62px">
-      <col style="width:110px">
-    </colgroup>
-    <thead><tr>
-      <th>Ano</th><th>Mês</th><th class="right">DU</th>
-      <th>Nome</th><th>Subárea</th><th class="right">Meta Fin.</th>
-      <th>Cargo</th><th class="right">OTE Fx</th><th class="right">OTE Vr</th>
-      <th class="right">Vendas</th><th class="right">Fixo R.</th>
-      <th class="right">Var. R.</th><th class="right">Bônus</th>
-      <th class="right">Flash P.</th><th class="right">Flash Fx</th>
-      <th class="right bold-col">TT</th>
-      <th class="right col-ating">MDO%</th>
-      <th>Obs.</th>
-    </tr></thead><tbody>`;
+  atualizarGauge(d.comissao.atingimento);
 
-  // Rows por squad
-  const squadsUsados = [...new Set(ps.map(p=>p.squad||'—'))].sort((a,b)=>{
-    const si=squadOrder.indexOf(a),sj=squadOrder.indexOf(b);
-    return(si===-1&&sj===-1)?a.localeCompare(b):(si===-1?1:sj===-1?-1:si-sj);
-  });
+  const badge = document.getElementById('comissaoBadge');
+  if (badge) badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
+  if (badge) badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
+  setText('comAtingimento', fmtPct(d.comissao.atingimento));
+  setText('comAcelerador', 'x' + d.comissao.acelerador);
+  setText('comEstimada', fmtMoney(d.comissao.estimada));
 
-  let gtVendas=0,gtFixo=0,gtVar=0,gtBonus=0,gtFP=0,gtFF=0,gtTT=0,gtVendasCloser=0;
+  setText('kpiAgendadas', d.kpis.reunioesAgendadas);
+  setText('kpiRealizadas', d.kpis.reunioesRealizadas);
+  setText('kpiRealizadasSub', `de ${d.kpis.reunioesAgendadas} agendadas`);
+  setText('kpiPctReu', fmtPct(d.kpis.pctMetaReu));
+  setText('kpiPctReuSub', `meta: ${d.metas.meta_reu}`);
+  setText('kpiValorBruto', fmtMoney(d.kpis.valorBruto));
+  setText('kpiValorMulti', fmtMoney(d.kpis.valorMultiplicador));
+  setText('kpiPctFin', fmtPct(d.kpis.pctMetaFin));
+  setText('kpiPctFinSub', `meta: ${fmtMoney(d.metas.meta_fin)}`);
+  // 6 - % qualificadas = 100 - % desqualificadas
+  setText('kpiQualif', fmtPct(Math.max(0, 100 - d.kpis.pctDesqualificacao)));
 
-  squadsUsados.forEach(sq => {
-    const membros = ps.filter(p=>(p.squad||'—')===sq);
-    const agg = squadAgg[sq]||{tt:0,vendas:0};
-    const mdoTime = agg.vendas>0 ? agg.tt/agg.vendas*100 : null;
+  atualizarCharts(d.graficos);
 
-    membros.forEach(p => {
-      const isCLoser = ['closer','inside'].includes(p.role);
-      const isLider  = ['lider_sdr','head','gerente'].includes(p.role);
-      const fixoR = p.ote?.fixo||0;
-      const varR  = p.comissao_final||0;
-      const bonP  = p.bonus||0;
-      const fpV   = parseFloat(p.flash_premiacao)||0;
-      const ffV   = parseFloat(p.flash_fixo)||0;
-      const tt    = fixoR+varR+bonP+fpV+ffV;
-      const venda = p.valor_ganho_multi||0;
-      const mdoP  = isCLoser && venda>0 ? tt/venda*100 : null;
+  // 7 - deal como link nas próximas reuniões
+  renderTabela('tblProximas', d.tabelas.proximasReunioes, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data)}</td><td class="mono">${r.hora||'--'}</td></tr>`
+  );
 
-      gtVendas+=venda; gtFixo+=fixoR; gtVar+=varR;
-      gtBonus+=bonP; gtFP+=fpV; gtFF+=ffV; gtTT+=tt;
-      if(isCLoser) gtVendasCloser+=venda;
+  // 7 - deal como link nas ganhas
+  renderTabela('tblGanhas', d.tabelas.reunioesGanhas, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_ganho)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
+  );
 
-      const fp_val = p.flash_premiacao||'';
-      const ff_val = p.flash_fixo||'';
-      const obs    = (p.mdo_obs||'').replace(/"/g,'&quot;');
-      const rowcls = isLider?'lider-row':'';
+  // 9 - desq: só link e proprietário
+  renderTabela('tblDesq', d.tabelas.reunioesDesq, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.proprietario||'--'}</td></tr>`
+  );
 
-      html+=`<tr class="${rowcls}">
-        <td class="muted">${ano}</td>
-        <td class="muted">${MESES_NOME[mes]}</td>
-        <td class="right muted">${du}</td>
-        <td class="bold-col">${p.nome}</td>
-        <td>${sq}</td>
-        <td class="right">${fBRL(p.meta_fin||0)}</td>
-        <td style="font-size:11px">${p.cargo||'—'}</td>
-        <td class="right">${fBRL(fixoR)}</td>
-        <td class="right">${fBRL(p.ote?.variavel||0)}</td>
-        <td class="right">${venda>0?fBRL(venda):'<span class="muted">—</span>'}</td>
-        <td class="right">${fBRL(fixoR)}</td>
-        <td class="right">${fBRL(varR)}</td>
-        <td class="right">${bonP>0?fBRL(bonP):'<span class="muted">—</span>'}</td>
-        <td class="right">
-          <input class="mdo-input ${fpV>0?'filled':''}" type="number" min="0" step="0.01"
-            placeholder="—" value="${fp_val}"
-            onblur="salvarMdoField('${p.nome_norm}','flash_premiacao',this)">
-        </td>
-        <td class="right">
-          <input class="mdo-input ${ffV>0?'filled':''}" type="number" min="0" step="0.01"
-            placeholder="—" value="${ff_val}"
-            onblur="salvarMdoField('${p.nome_norm}','flash_fixo',this)">
-        </td>
-        <td class="right bold-col">${fBRL(tt)}</td>
-        <td class="col-ating">${mdoP!==null?`<span class="pct ${corPct(mdoP)}">${fPct(mdoP)}</span>`:'<span class="muted" style="font-size:11px">—</span>'}</td>
-        <td>
-          <input class="mdo-obs ${obs?'filled':''}" type="text"
-            placeholder="Obs..." value="${obs}"
-            onblur="salvarMdoField('${p.nome_norm}','mdo_obs',this)">
-        </td>
-      </tr>`;
+  setText('footerDate', `Atualizado em ${d.atualizadoEm}`);
+  carregarFoto(d.colaborador.foto);
+
+  // Mês atual
+  const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const agora = new Date();
+  const mesSel = parseInt(document.getElementById('selMes')?.value || agora.getMonth()+1);
+  const anoSel = parseInt(document.getElementById('selAno')?.value || agora.getFullYear());
+  document.getElementById('mesAtual').textContent = meses[mesSel] + ' / ' + anoSel;
+
+  document.getElementById('loading').style.display   = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+async function fetchDados() {
+  try {
+    const resp = await fetch(getApiUrl(API_URL_BASE));
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.erro) throw new Error(data.erro);
+    render(data);
+  } catch(err) {
+    document.querySelector('.loading-txt').textContent = 'Erro: ' + err.message;
+    console.error(err);
+  }
+}
+
+async function init() {
+  // Detecta tipo (SDR ou Closer)
+  const tipoResp = await fetch('/api/tipo');
+  const tipoData = await tipoResp.json();
+  const tipo = tipoData.tipo || 'sdr';
+  session_tipo = tipo;
+
+  // Inicializa seletor com mês atual
+  const agr = new Date();
+  const selM = document.getElementById('selMes');
+  const selA = document.getElementById('selAno');
+  if (selM) selM.value = agr.getMonth() + 1;
+  if (selA) selA.value = agr.getFullYear();
+
+  if (tipo === 'closer') {
+    // Ajusta UI para Closer
+    document.title = 'Dashboard Closer – Board Academy';
+    // Remove meta reunião do header
+    document.getElementById('metaReuWrap').style.display = 'none';
+    // Muda KPIs
+    document.getElementById('kpiGrid').innerHTML = kpiGridCloser();
+    // Muda gráficos
+    document.getElementById('chartsRow').innerHTML = chartsRowCloser();
+    // Muda tabelas
+    document.getElementById('tablesRow').innerHTML = tablesRowCloser();
+    // Mostra atalho tabela price
+    document.getElementById('tabelaPriceWrap').style.display = 'block';
+    await fetchCloser();
+    setInterval(fetchCloser, REFRESH_MS);
+  } else {
+    await fetchDados();
+    setInterval(fetchDados, REFRESH_MS);
+  }
+}
+
+let session_tipo = 'sdr';
+
+init();
+
+
+// ── PAGINAÇÃO ────────────────────────────────────────────────
+const PAG_SIZE = 10;
+const _pagState = {};
+
+function pagInit(id, dados, renderFn) {
+  _pagState[id] = { dados, pagina: 0, renderFn };
+  pagRender(id);
+}
+
+function pagRender(id) {
+  const s = _pagState[id];
+  if (!s) return;
+  const { dados, pagina, renderFn } = s;
+  const total   = dados.length;
+  const totalPag = Math.ceil(total / PAG_SIZE);
+  const inicio  = pagina * PAG_SIZE;
+  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+
+  const tbody = document.getElementById(id);
+  if (!tbody) return;
+
+  if (!fatia.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
+  } else {
+    tbody.innerHTML = fatia.map(renderFn).join('');
+  }
+
+  // Paginação
+  const pagWrapId = id + '_pag';
+  let pagWrap = document.getElementById(pagWrapId);
+  if (!pagWrap) {
+    pagWrap = document.createElement('div');
+    pagWrap.id = pagWrapId;
+    pagWrap.className = 'pag-wrap';
+    tbody.closest('table').after(pagWrap);
+  }
+
+  if (total <= PAG_SIZE) {
+    pagWrap.innerHTML = '';
+    return;
+  }
+
+  pagWrap.innerHTML = `
+    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
+    <div class="pag-btns">
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
+      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
+    </div>`;
+}
+
+function pagIr(id, nova) {
+  if (!_pagState[id]) return;
+  _pagState[id].pagina = nova;
+  pagRender(id);
+}
+
+// ── ABAS ────────────────────────────────────────────────────
+function mudarAba(aba, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
+  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
+  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
+}
+
+// ── COMISSÃO ────────────────────────────────────────────────
+const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let comissaoCarregada = false;
+let dadosComissao = [];
+let pendenteMesIdx = null;
+
+const fmtMoneyC = v => {
+  if (!v || v === 'nan') return 'R$ 0';
+  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0';
+  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+const fmtPctC = v => v && v !== 'nan' ? v : '--';
+
+async function carregarComissao() {
+  comissaoCarregada = true;
+  try {
+    const resp = await fetch('/api/comissao');
+    const data = await resp.json();
+    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
+    dadosComissao = data.registros;
+    // Aplica confirmações salvas no localStorage
+    dadosComissao.forEach(r => {
+      const chave = `confirmacao_${r.ano}_${r.mes}`;
+      const salvo = localStorage.getItem(chave);
+      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
+        r.confirmacao = salvo;
+      }
     });
+    renderComissao();
+  } catch(e) {
+    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
+  }
+}
 
-    // Linha de total por time
-    html+=`<tr style="background:#f0f0ec;border-top:1px solid #d8d8d4">
-      <td colspan="9" style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#555;text-align:right;padding:7px 10px">MDO ${sq}</td>
-      <td class="right" style="font-weight:600;font-size:11px">${fBRL(agg.vendas)}</td>
-      <td colspan="5"></td>
-      <td class="right" style="font-weight:600;font-size:11px">${fBRL(agg.tt)}</td>
-      <td class="col-ating" style="font-weight:700">${mdoTime!==null?`<span class="pct ${corPct(mdoTime)}">${fPct(mdoTime)}</span>`:'<span class="muted">—</span>'}</td>
-      <td></td>
-    </tr>`;
+function renderComissao() {
+  const el = document.getElementById('listaMeses');
+  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+
+  el.innerHTML = dadosComissao.map((r, i) => {
+    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
+    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
+    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
+    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
+
+    const comissaoCol = elegivel
+      ? `<th style="color:var(--yellow)">Comissão</th>`
+      : `<th style="color:var(--red)">Comissão</th>`;
+    const comissaoVal = elegivel
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
+
+    const metricas = `
+      <table class="com-table">
+        <thead>
+          <tr>
+            <th>Vol. Reuniões</th>
+            <th>Valor Financeiro</th>
+            <th>% Reunião</th>
+            <th>% Financeiro</th>
+            <th>% Meta Final</th>
+            <th>Acelerador</th>
+            <th>Variável OTE</th>
+            <th>Rampagem</th>
+            ${comissaoCol}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${r.vol_reuniao || '--'}</td>
+            <td>${fmtMoneyC(r.valor_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
+            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
+            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
+            <td>${r.acelerador || '--'}</td>
+            <td>${fmtMoneyC(r.variavel_ote)}</td>
+            <td>${r.rampagem || '--'}</td>
+            ${comissaoVal}
+          </tr>
+        </tbody>
+      </table>`;
+
+    const comissaoHtml = '';
+
+    let acao = '';
+    if (elegivel && confirmado) {
+      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
+    } else if (elegivel) {
+      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+    }
+
+    return `<div class="mes-card ${cardClass}">
+      <div class="mes-header">
+        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
+        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
+      </div>
+      ${metricas}${comissaoHtml}${acao}
+    </div>`;
+  }).join('');
+}
+
+function abrirModal(idx) {
+  pendenteMesIdx = idx;
+  const r = dadosComissao[idx];
+  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
+  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
+  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  pendenteMesIdx = null;
+}
+
+async function confirmarDefinitivo() {
+  if (pendenteMesIdx === null) return;
+  const r = dadosComissao[pendenteMesIdx];
+  document.getElementById('btnOk').disabled = true;
+
+  // Salva confirmação no localStorage
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const chave = `confirmacao_${r.ano}_${r.mes}`;
+  localStorage.setItem(chave, dataHora);
+  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+
+  // Envia e-mail de confirmação
+  await fetch('/api/comissao/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
   });
 
-  // Linhas virtuais
-  virtuais.forEach(v => {
-    const fpV = parseFloat(dados[v.key+'_flash_p'])||0;
-    const ffV = parseFloat(dados[v.key+'_flash_f'])||0;
-    const obs = (dados[v.key+'_obs']||'').replace(/"/g,'&quot;');
-    const tt  = fpV+ffV+(parseFloat(dados[v.key+'_fixo'])||0)+(parseFloat(dados[v.key+'_var'])||0);
-    html+=`<tr style="background:#fafaf8">
-      <td class="muted">${ano}</td>
-      <td class="muted">${MESES_NOME[mes]}</td>
-      <td class="right muted">${du}</td>
-      <td class="bold-col" style="font-style:italic">${v.label}</td>
-      <td class="muted">—</td>
-      <td class="right">
-        <input class="mdo-input ${dados[v.key+'_meta']?'filled':''}" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_meta']||''}"
-          onblur="salvarVirtual('${v.key}','meta',this)">
-      </td>
-      <td class="muted" style="font-size:11px">—</td>
-      <td class="right">
-        <input class="mdo-input ${dados[v.key+'_fixo']?'filled':''}" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_fixo']||''}"
-          onblur="salvarVirtual('${v.key}','fixo',this)">
-      </td>
-      <td class="right">
-        <input class="mdo-input ${dados[v.key+'_var']?'filled':''}" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_var']||''}"
-          onblur="salvarVirtual('${v.key}','var',this)">
-      </td>
-      <td class="muted center">—</td>
-      <td class="right">
-        <input class="mdo-input" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_fixo_r']||''}"
-          onblur="salvarVirtual('${v.key}','fixo_r',this)">
-      </td>
-      <td class="right">
-        <input class="mdo-input" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_var_r']||''}"
-          onblur="salvarVirtual('${v.key}','var_r',this)">
-      </td>
-      <td class="right">
-        <input class="mdo-input" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_bonus']||''}"
-          onblur="salvarVirtual('${v.key}','bonus',this)">
-      </td>
-      <td class="right">
-        <input class="mdo-input ${fpV>0?'filled':''}" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_flash_p']||''}"
-          onblur="salvarVirtual('${v.key}','flash_p',this)">
-      </td>
-      <td class="right">
-        <input class="mdo-input ${ffV>0?'filled':''}" type="number" min="0" step="0.01"
-          placeholder="—" value="${dados[v.key+'_flash_f']||''}"
-          onblur="salvarVirtual('${v.key}','flash_f',this)">
-      </td>
-      <td class="right bold-col">${tt>0?fBRL(tt):'<span class="muted">—</span>'}</td>
-      <td class="col-ating muted">—</td>
-      <td>
-        <input class="mdo-obs ${obs?'filled':''}" type="text"
-          placeholder="Obs..." value="${obs}"
-          onblur="salvarVirtual('${v.key}','obs',this)">
-      </td>
-    </tr>`;
-  });
+  fecharModal();
+  document.getElementById('successOverlay').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('successOverlay').classList.add('hidden');
+    renderComissao();
+  }, 3500);
 
-  // Grand total
-  const gtMdo = gtVendasCloser>0 ? gtTT/gtVendasCloser*100 : null;
-  html+=`<tr class="mdo-total-row">
-    <td colspan="9" style="text-align:right;font-size:10px;letter-spacing:.08em">TOTAL GERAL</td>
-    <td class="right">${fBRL(gtVendasCloser)}</td>
-    <td class="right">${fBRL(gtFixo)}</td>
-    <td class="right">${fBRL(gtVar)}</td>
-    <td class="right">${fBRL(gtBonus)}</td>
-    <td class="right">${fBRL(gtFP)}</td>
-    <td class="right">${fBRL(gtFF)}</td>
-    <td class="right">${fBRL(gtTT)}</td>
-    <td class="col-ating">${gtMdo!==null?`<span style="color:#FFD700;font-weight:700">${fPct(gtMdo)}</span>`:'—'}</td>
-    <td></td>
-  </tr>`;
-
-  html+=`</tbody></table></div>`;
-  cont.innerHTML = html;
+  document.getElementById('btnOk').disabled = false;
 }
 
-function salvarVirtual(key, campo, input) {
-  const val = input.value;
-  dados[key+'_'+campo] = val;
-  input.classList.toggle('filled', val!==''&&val!=='0');
-  renderMDO();
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) fecharModal();
+});
+
+// ── CLOSER ──────────────────────────────────────────────────
+
+function kpiGridCloser() {
+  return `
+    <div class="kpi-card">
+      <div class="kpi-label">Reuniões Realizadas</div>
+      <div class="kpi-value" id="kpiRealizadas">--</div>
+      <div class="kpi-sub">mês atual</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Reuniões Validadas</div>
+      <div class="kpi-value green" id="kpiValidadas">--</div>
+      <div class="kpi-sub" id="kpiValidadasSub">--</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">% Validadas</div>
+      <div class="kpi-value yellow" id="kpiPctValidadas">--</div>
+      <div class="kpi-sub">das realizadas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">R$ Ganhos</div>
+      <div class="kpi-value green" id="kpiValorBruto">--</div>
+      <div class="kpi-sub">valor bruto</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">R$ Ganhos Multiplicador</div>
+      <div class="kpi-value green" id="kpiValorMulti">--</div>
+      <div class="kpi-sub">com multiplicador</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">% Meta Financeira</div>
+      <div class="kpi-value yellow" id="kpiPctFin">--</div>
+      <div class="kpi-sub" id="kpiPctFinSub">--</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Volume de Referidos</div>
+      <div class="kpi-value" id="kpiReferidos">--</div>
+      <div class="kpi-sub">mês atual</div>
+    </div>`;
 }
 
-
-function salvarMdoField(nome_norm, campo, input) {
-  const p = dados?.pessoas?.find(x => x.nome_norm === nome_norm);
-  if (!p) return;
-  const val = input.value;
-  p[campo] = campo === 'mdo_obs' ? val : (parseFloat(val)||0);
-  input.classList.toggle('filled', val !== '' && val !== '0');
-  // Recalcula TT na linha (não re-renderiza tudo)
-  if (campo !== 'mdo_obs') renderMDO();
+function chartsRowCloser() {
+  return `
+    <div class="chart-card">
+      <div class="chart-title">Reuniões Realizadas</div>
+      <div class="chart-canvas-wrap"><canvas id="chartRealizadas"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Valores Ganhos (R$)</div>
+      <div class="chart-canvas-wrap"><canvas id="chartValores"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Volume de Referidos</div>
+      <div class="chart-canvas-wrap"><canvas id="chartReferidos"></canvas></div>
+    </div>`;
 }
 
-carregarDados();
+function tablesRowCloser() {
+  return `
+    <div class="table-card">
+      <div class="table-title">Reuniões Realizadas</div>
+      <table class="data-table">
+        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
+        <tbody id="tblRealizadas"></tbody>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Ganhos</div>
+      <table class="data-table">
+        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
+        <tbody id="tblGanhos"></tbody>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Referidos</div>
+      <table class="data-table">
+        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
+        <tbody id="tblReferidos"></tbody>
+      </table>
+    </div>`;
+}
+
+async function fetchCloser() {
+  try {
+    const resp = await fetch(getApiUrl(API_CLOSER_BASE));
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const d = await resp.json();
+    if (d.erro) throw new Error(d.erro);
+    renderCloser(d);
+  } catch(err) {
+    document.querySelector('.loading-txt').textContent = 'Erro: ' + err.message;
+    console.error(err);
+  }
+}
+
+function renderCloser(d) {
+  const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
+  setText('avatarInitials', iniciais);
+  setText('userName', d.colaborador.nome);
+  setText('userCargo', `${d.colaborador.cargo} · ${d.colaborador.time}`);
+  setText('metaFin', fmtMoney(d.metas.meta_fin));
+
+  atualizarGauge(d.comissao.atingimento);
+
+  const badge = document.getElementById('comissaoBadge');
+  if (badge) badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
+  if (badge) badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
+  setText('comAtingimento', fmtPct(d.comissao.atingimento));
+  setText('comAcelerador', 'x' + d.comissao.acelerador);
+  setText('comEstimada', fmtMoney(d.comissao.estimada));
+
+  setText('kpiRealizadas', d.kpis.reunioesRealizadas);
+  setText('kpiValidadas', d.kpis.reunioesValidadas);
+  setText('kpiValidadasSub', `de ${d.kpis.reunioesRealizadas} realizadas`);
+  setText('kpiPctValidadas', fmtPct(d.kpis.pctValidadas));
+  setText('kpiValorBruto', fmtMoney(d.kpis.valorBruto));
+  setText('kpiValorMulti', fmtMoney(d.kpis.valorMultiplicador));
+  setText('kpiPctFin', fmtPct(d.kpis.pctMetaFin));
+  setText('kpiPctFinSub', `meta: ${fmtMoney(d.metas.meta_fin)}`);
+  setText('kpiReferidos', d.kpis.volumeReferidos);
+
+  // Gráficos
+  const reLabels = d.graficos.serieRealizadas.map(x => fmtLabel(x.data));
+  const reData   = d.graficos.serieRealizadas.map(x => x.qtd);
+  const vaLabels = d.graficos.serieValores.map(x => fmtLabel(x.data));
+  const vaData   = d.graficos.serieValores.map(x => x.valor);
+  const rfLabels = d.graficos.serieReferidos.map(x => fmtLabel(x.data));
+  const rfData   = d.graficos.serieReferidos.map(x => x.qtd);
+
+  if (chartRe) chartRe.destroy();
+  if (chartVa) chartVa.destroy();
+  if (chartAg) chartAg.destroy();
+
+  chartRe = buildChart('chartRealizadas', 'line', reLabels, reData, '#2adf8a');
+  chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
+  chartAg = buildChart('chartReferidos',  'bar',  rfLabels, rfData, '#f5c400');
+
+  // Tabelas
+  renderTabela('tblRealizadas', d.tabelas.reunioesRealizadas, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data)}</td><td class="mono">${r.hora||'--'}</td></tr>`
+  );
+  renderTabela('tblGanhos', d.tabelas.ganhos, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_ganho)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
+  );
+  renderTabela('tblReferidos', d.tabelas.referidos, r =>
+    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_criacao)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
+  );
+
+  setText('footerDate', `Atualizado em ${d.atualizadoEm}`);
+  carregarFoto(d.colaborador.foto);
+
+  const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const agora = new Date();
+  const mesSel = parseInt(document.getElementById('selMes')?.value || agora.getMonth()+1);
+  const anoSel = parseInt(document.getElementById('selAno')?.value || agora.getFullYear());
+  document.getElementById('mesAtual').textContent = meses[mesSel] + ' / ' + anoSel;
+
+  document.getElementById('loading').style.display   = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
 </script>
 </body>
 </html>
