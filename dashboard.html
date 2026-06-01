@@ -1,1490 +1,904 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard SDR – Board Academy</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+"""
+Board Academy — Dashboard SDR
+Servidor Python + Flask para Render
 
-// ── PAGINAÇÃO ────────────────────────────────────────────────
-const PAG_SIZE = 10;
-const _pagState = {};
+Variáveis de ambiente necessárias no Render:
+    PIPEDRIVE_KEY = sua_chave_aqui
+    SECRET_KEY    = qualquer_string_aleatoria
+"""
 
-function pagInit(id, dados, renderFn) {
-  _pagState[id] = { dados, pagina: 0, renderFn };
-  pagRender(id);
-}
+from flask import Flask, jsonify, request, session, redirect, send_from_directory
+import requests as req
+import pandas as pd
+import os
+import unicodedata
+from datetime import date, datetime, timedelta
+from io import StringIO
+import math
 
-function pagRender(id) {
-  const s = _pagState[id];
-  if (!s) return;
-  const { dados, pagina, renderFn } = s;
-  const total   = dados.length;
-  const totalPag = Math.ceil(total / PAG_SIZE);
-  const inicio  = pagina * PAG_SIZE;
-  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+def limpar_nans(obj):
+    if isinstance(obj, dict):
+        return {k: limpar_nans(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [limpar_nans(v) for v in obj]
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return 0
+    return obj
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-  const tbody = document.getElementById(id);
-  if (!tbody) return;
+app = Flask(__name__, static_folder="static")
+app.secret_key = os.getenv("SECRET_KEY", "boardacademy2026")
 
-  if (!fatia.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
-  } else {
-    tbody.innerHTML = fatia.map(renderFn).join('');
-  }
+# ── CONFIG ──────────────────────────────────────────────────
+API_KEY  = os.getenv("PIPEDRIVE_KEY")
+BASE_V1  = "https://boardacademy.pipedrive.com/api/v1"
+BASE_V2  = "https://boardacademy.pipedrive.com/api/v2"
 
-  // Paginação
-  const pagWrapId = id + '_pag';
-  let pagWrap = document.getElementById(pagWrapId);
-  if (!pagWrap) {
-    pagWrap = document.createElement('div');
-    pagWrap.id = pagWrapId;
-    pagWrap.className = 'pag-wrap';
-    tbody.closest('table').after(pagWrap);
-  }
+GITHUB_FOTOS = "https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main"
 
-  if (total <= PAG_SIZE) {
-    pagWrap.innerHTML = '';
-    return;
-  }
+URL_COLAB = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=1782440078&single=true&output=csv"
+URL_METAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=0&single=true&output=csv"
+URL_OTE   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=569278086&single=true&output=csv"
 
-  pagWrap.innerHTML = `
-    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
-    <div class="pag-btns">
-      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
-      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
-    </div>`;
-}
+URL_COMISSOES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=1720844569&single=true&output=csv"
+URL_USERS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=160245570&single=true&output=csv"
 
-function pagIr(id, nova) {
-  if (!_pagState[id]) return;
-  _pagState[id].pagina = nova;
-  pagRender(id);
-}
+FILTER_DEALS      = 1464384
+FILTER_ACTIVITIES = 1310451
+FILTER_DEALS_RV   = 1466157
+FILTER_REFERIDOS  = 1562285
+TABELA_PRICE_URL  = "https://inspiring-marshmallow-1ba.netlify.app/"
 
-// ── ABAS ────────────────────────────────────────────────────
-function mudarAba(aba, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
-  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
-  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
-}
+CF_MULTIPLICADOR = "7e0e43c2734751f77be292a72527f638a850ad50"
+CF_QUALIFICADOR  = "a6f13cc27c8d041f3af4091283ce0d4fe0913875"
+CF_REUNIAO_VALID = "7299bf170c5deab9b4fd8c2275f55faf51984dea"
 
-// ── COMISSÃO ────────────────────────────────────────────────
-const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-let comissaoCarregada = false;
-let dadosComissao = [];
-let pendenteMesIdx = null;
+RV_SIM    = "411"
+RV_NAO    = "412"
+RV_NOSHOW = "481"
 
-const fmtMoneyC = v => {
-  if (!v || v === 'nan') return 'R$ 0';
-  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
-  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
-  const n = Number(s);
-  if (isNaN(n) || n === 0) return 'R$ 0';
-  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
-  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-};
-const fmtPctC = v => v && v !== 'nan' ? v : '--';
+TIMES_ESCOPO = ["elite", "sniper", "atlantis", "mgm", "orion", "latam", "zenite"]
 
-async function carregarComissao() {
-  comissaoCarregada = true;
-  try {
-    const resp = await fetch('/api/comissao');
-    const data = await resp.json();
-    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
-    dadosComissao = data.registros;
-    // Aplica confirmações salvas no localStorage
-    dadosComissao.forEach(r => {
-      const chave = `confirmacao_${r.ano}_${r.mes}`;
-      const salvo = localStorage.getItem(chave);
-      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
-        r.confirmacao = salvo;
-      }
-    });
-    renderComissao();
-  } catch(e) {
-    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
-  }
-}
+# ── HELPERS ─────────────────────────────────────────────────
+def norm(s):
+    if not s:
+        return ""
+    s = str(s).strip().lower()
+    return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode()
 
-function renderComissao() {
-  const el = document.getElementById('listaMeses');
-  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+def arred(v):
+    try:
+        return round(float(v), 2)
+    except:
+        return 0.0
 
-  el.innerHTML = dadosComissao.map((r, i) => {
-    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
-    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
-    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
-    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
+def acelerador(pct):
+    if pct >= 120: return 1.5
+    if pct >= 100: return 1.0
+    if pct >= 86:  return 0.7
+    if pct >= 60:  return 0.5
+    return 0.0
 
-    const comissaoCol = elegivel
-      ? `<th style="color:var(--yellow)">Comissão</th>`
-      : `<th style="color:var(--red)">Comissão</th>`;
-    const comissaoVal = elegivel
-      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
-      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
+def dias_uteis_passados():
+    hoje = date.today()
+    count = 0
+    d = date(hoje.year, hoje.month, 1)
+    while d <= hoje:
+        if d.weekday() < 5:
+            count += 1
+        if d == hoje:
+            break
+        try:
+            d = date(d.year, d.month, d.day + 1)
+        except:
+            break
+    return max(count, 1)
 
-    const metricas = `
-      <table class="com-table">
-        <thead>
-          <tr>
-            <th>Vol. Reuniões</th>
-            <th>Valor Financeiro</th>
-            <th>% Reunião</th>
-            <th>% Financeiro</th>
-            <th>% Meta Final</th>
-            <th>Acelerador</th>
-            <th>Variável OTE</th>
-            <th>Rampagem</th>
-            ${comissaoCol}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${r.vol_reuniao || '--'}</td>
-            <td>${fmtMoneyC(r.valor_financeiro)}</td>
-            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
-            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
-            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
-            <td>${r.acelerador || '--'}</td>
-            <td>${fmtMoneyC(r.variavel_ote)}</td>
-            <td>${r.rampagem || '--'}</td>
-            ${comissaoVal}
-          </tr>
-        </tbody>
-      </table>`;
+def ajustar_hora(hora_str):
+    if not hora_str:
+        return None
+    try:
+        h, m = hora_str[:5].split(":")
+        dt = datetime(2000, 1, 1, int(h), int(m)) - timedelta(hours=3)
+        return dt.strftime("%H:%M")
+    except:
+        return hora_str
 
-    const comissaoHtml = '';
+def url_foto(nome):
+    base = f"{GITHUB_FOTOS}/{nome}"
+    for ext in ["jpg", "jpeg", "png", "JPG", "JPEG", "PNG"]:
+        url = f"{base}.{ext}"
+        try:
+            r = req.head(url, timeout=5)
+            if r.status_code == 200:
+                return url
+        except:
+            pass
+    return None
 
-    let acao = '';
-    if (elegivel && confirmado) {
-      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
-    } else if (elegivel) {
-      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+# ── SHEETS ──────────────────────────────────────────────────
+def ler_sheet(url):
+    resp = req.get(url, timeout=15)
+    resp.encoding = "utf-8"
+    resp.raise_for_status()
+    return pd.read_csv(StringIO(resp.text))
+
+def buscar_usuario(usuario, senha):
+    df = ler_sheet(URL_USERS)
+    df.columns = [c.strip().lower() for c in df.columns]
+    for _, row in df.iterrows():
+        if (norm(str(row.get("usuario", ""))) == norm(usuario) and
+            str(row.get("senha", "")).strip() == str(senha).strip()):
+            return str(row.get("usuario", ""))
+    return None
+
+def buscar_colaborador(nome, mes=None, ano=None):
+    df = ler_sheet(URL_COLAB)
+    df.columns = [c.strip() for c in df.columns]
+    hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
+
+    col_mes_ref = next((c for c in df.columns if "mes" in norm(c) and "ref" in norm(c)), None)
+    col_ano_ref = next((c for c in df.columns if "ano" in norm(c) and "ref" in norm(c)), None)
+
+    melhor = None
+    for _, row in df.iterrows():
+        if norm(str(row.get("Nome", ""))) != norm(nome):
+            continue
+        subarea = str(row.get("Subarea", ""))
+        status  = str(row.get("Status (Euqipe Comercial)", ""))
+        if norm(status) != "ativo" or norm(subarea) not in TIMES_ESCOPO:
+            continue
+
+        if col_mes_ref and col_ano_ref:
+            try:
+                mes_ref = int(float(str(row.get(col_mes_ref, 0))))
+                ano_ref = int(float(str(row.get(col_ano_ref, 0))))
+                if ano_ref == ano and mes_ref == mes:
+                    return {
+                        "nome":  str(row.get("Nome", "")),
+                        "time":  subarea,
+                        "cargo": str(row.get("Cargo", "")),
+                    }
+                melhor = {
+                    "nome":  str(row.get("Nome", "")),
+                    "time":  subarea,
+                    "cargo": str(row.get("Cargo", "")),
+                }
+            except:
+                melhor = {
+                    "nome":  str(row.get("Nome", "")),
+                    "time":  subarea,
+                    "cargo": str(row.get("Cargo", "")),
+                }
+        else:
+            return {
+                "nome":  str(row.get("Nome", "")),
+                "time":  subarea,
+                "cargo": str(row.get("Cargo", "")),
+            }
+
+    return melhor
+
+def buscar_metas(nome, mes=None, ano=None):
+    df = ler_sheet(URL_METAS)
+    df.columns = [c.strip() for c in df.columns]
+    hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
+
+    def limpar_numero(val):
+        try:
+            return float(str(val or "0").strip())
+        except:
+            return 0.0
+
+    for _, row in df.iterrows():
+        try:
+            ano_row = int(float(str(row.get("Ano", 0))))
+            mes_row = int(float(str(row.get("Mes", row.get("Mês", 0)))))
+        except:
+            continue
+        if norm(row.get("Nome")) == norm(nome) and ano_row == ano and mes_row == mes:
+            ramp_str = str(row.get("% de Rampagem", "1") or "1").replace("%","").strip()
+            ramp_val = float(ramp_str)
+            ramp = ramp_val / 100 if ramp_val > 1 else ramp_val
+            return {
+                "meta_reu":   limpar_numero(row.get("Meta de Reunioes", row.get("Meta de Reuniões", 0))),
+                "meta_fin":   limpar_numero(row.get("Meta Financeira", 0)),
+                "rampagem":   ramp,
+                "dias_uteis": int(float(row.get("Dias Uteis", 20) or 20)),
+            }
+    return None
+
+def buscar_ote(cargo):
+    df = ler_sheet(URL_OTE)
+    df.columns = [c.strip() for c in df.columns]
+    for _, row in df.iterrows():
+        nivel = str(row.get("Nivel", row.get("Nível", "")))
+        if norm(nivel) == norm(cargo):
+            return {
+                "total":    float(row.get("ote_total", 0) or 0),
+                "fixo":     float(row.get("fixo", 0) or 0),
+                "variavel": float(row.get("variavel", 0) or 0),
+            }
+    return None
+
+# ── PIPEDRIVE ────────────────────────────────────────────────
+def buscar_qualificador_id(nome):
+    resp = req.get(f"{BASE_V1}/dealFields",
+        params={"api_token": API_KEY}, timeout=15)
+    resp.raise_for_status()
+    fields = resp.json().get("data") or []
+    for field in fields:
+        if field.get("key") == CF_QUALIFICADOR:
+            for opt in (field.get("options") or []):
+                if norm(opt.get("label","")) == norm(nome):
+                    return str(opt.get("id"))
+    return None
+
+def buscar_users():
+    resp = req.get(f"{BASE_V1}/users",
+        params={"api_token": API_KEY}, timeout=15)
+    resp.raise_for_status()
+    mapa = {}
+    for u in (resp.json().get("data") or []):
+        mapa[u["id"]] = u["name"]
+    return mapa
+
+def encontrar_user_id(users, nome):
+    for uid, uname in users.items():
+        if norm(uname) == norm(nome):
+            return uid
+    return None
+
+def buscar_deals(mes=None, ano=None):
+    todos, start = [], 0
+    hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
+    mes_str = f"{ano}-{mes:02d}"
+    while True:
+        resp = req.get(f"{BASE_V1}/deals", params={
+            "filter_id": FILTER_DEALS,
+            "limit": 500,
+            "start": start,
+            "api_token": API_KEY
+        }, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        lote = data.get("data") or []
+        # Filtra pelo mês selecionado
+        for d in lote:
+            wt = str(d.get("won_time", ""))[:7]
+            if wt == mes_str:
+                todos.append(d)
+        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
+        if not mais or not lote:
+            break
+        start += 500
+    return todos
+
+def buscar_activities(mes=None, ano=None):
+    todos, cursor = [], None
+    hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
+    mes_str = f"{ano}-{mes:02d}"
+    while True:
+        params = {"filter_id": FILTER_ACTIVITIES, "limit": 200}
+        if cursor:
+            params["cursor"] = cursor
+        resp = req.get(f"{BASE_V2}/activities",
+            params=params,
+            headers={"x-api-token": API_KEY},
+            timeout=30)
+        resp.raise_for_status()
+        data   = resp.json()
+        lote   = data.get("data") or []
+        for a in lote:
+            if str(a.get("due_date", ""))[:7] == mes_str:
+                todos.append(a)
+        cursor = data.get("additional_data", {}).get("next_cursor")
+        if not cursor or not lote:
+            break
+    return todos
+
+def buscar_deals_rv(mes=None, ano=None):
+    """Busca deals com Reunião Validada? != Não e != No Show."""
+    deal_ids_validos = set()
+    mapa_owner = {}
+    start = 0
+    while True:
+        resp = req.get(f"{BASE_V1}/deals", params={
+            "filter_id": FILTER_DEALS_RV,
+            "status": "all_not_deleted",
+            "limit": 500,
+            "start": start,
+            "api_token": API_KEY,
+        }, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        lote = data.get("data") or []
+        for d in lote:
+            did = d["id"]
+            uid = d.get("user_id")
+            deal_ids_validos.add(did)
+            mapa_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
+        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
+        if not mais or not lote:
+            break
+        start += 500
+    return deal_ids_validos, mapa_owner
+
+def cf(deal, key):
+    val = deal.get(key)
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        return val.get("value") or val.get("label")
+    return val
+
+# ── CÁLCULO ──────────────────────────────────────────────────
+def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities):
+
+    deals_ganhos = [
+        d for d in deals
+        if d.get("status") == "won" and str(cf(d, CF_QUALIFICADOR)) == str(qualificador_id)
+    ]
+
+    valor_bruto = sum(float(d.get("value") or 0) for d in deals_ganhos)
+    valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
+
+    # mes_atual já vem filtrado das activities
+    acts_sdr = [
+        a for a in activities
+        if str(a.get("owner_id")) == str(user_id)
+    ]
+
+    # Busca deals válidos (Reunião Validada? != Não e != No Show)
+    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+
+    # Completa mapa_owner com deals ganhos do mês
+    for d in deals:
+        did = d["id"]
+        if did not in mapa_deal_owner:
+            uid = d.get("user_id")
+            mapa_deal_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
+
+    def valida(a):
+        if not (a.get("done") == True or a.get("status") == "done"):
+            return False
+        deal_id = a.get("deal_id")
+        # SDR não pode agendar reunião para si mesmo
+        act_owner  = str(a.get("owner_id", ""))
+        deal_owner = str(mapa_deal_owner.get(deal_id, "")) if deal_id else ""
+        if act_owner and deal_owner and act_owner == deal_owner:
+            return False
+        # Deal deve estar no filtro de reuniões válidas
+        if deal_id and deal_id not in deal_ids_validos:
+            return False
+        return True
+
+    def eh_desq(a):
+        if not (a.get("done") == True or a.get("status") == "done"):
+            return False
+        deal_id = a.get("deal_id")
+        if not deal_id:
+            return False
+        return deal_id not in deal_ids_validos
+
+    reu_realizadas = [a for a in acts_sdr if valida(a)]
+    reu_desq       = [a for a in acts_sdr if eh_desq(a)]
+
+    qtd_agendadas  = len(acts_sdr)
+    qtd_realizadas = len(reu_realizadas)
+
+    pct_reu = (qtd_realizadas / metas["meta_reu"]) if metas["meta_reu"] > 0 else 0
+    pct_fin = (valor_multi / metas["meta_fin"])    if metas["meta_fin"] > 0 else 0
+    ating   = (pct_reu * 0.7 + pct_fin * 0.3) * 100
+
+    acel     = acelerador(ating)
+    comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
+
+    dp = dias_uteis_passados()
+    du = metas["dias_uteis"]
+    proj_fin      = (valor_multi / dp) * du
+    proj_reu      = (qtd_realizadas / dp) * du
+    pct_proj_fin  = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
+    pct_proj_reu  = (proj_reu / metas["meta_reu"] * 100)  if metas["meta_reu"] > 0 else 0
+    ating_proj    = (pct_proj_reu * 0.7 + pct_proj_fin * 0.3)
+    acel_proj     = acelerador(ating_proj)
+    comissao_proj = ote["variavel"] * (ating_proj / 100) * metas["rampagem"] * acel_proj
+
+    def serie_acts(lista):
+        mapa = {}
+        for a in lista:
+            dt = str(a.get("due_date", ""))[:10]
+            if dt:
+                mapa[dt] = mapa.get(dt, 0) + 1
+        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
+
+    def serie_deals(lista):
+        mapa = {}
+        for d in lista:
+            dt = str(d.get("won_time", ""))[:10]
+            if dt:
+                v = float(cf(d, CF_MULTIPLICADOR) or 0)
+                mapa[dt] = mapa.get(dt, 0) + v
+        return [{"data": k, "valor": v} for k, v in sorted(mapa.items())]
+
+    proximas = sorted(
+        [a for a in acts_sdr if not (a.get("done") or a.get("status") == "done")],
+        key=lambda a: (a.get("due_date", ""), a.get("due_time", "") or "")
+    )[:10]
+
+    foto = url_foto(nome)
+
+    return {
+        "colaborador": {**colaborador, "foto": foto},
+        "metas":       metas,
+        "ote":         ote,
+        "kpis": {
+            "reunioesAgendadas":  qtd_agendadas,
+            "reunioesRealizadas": qtd_realizadas,
+            "pctMetaReu":         arred(pct_reu * 100),
+            "valorBruto":         arred(valor_bruto),
+            "valorMultiplicador": arred(valor_multi),
+            "pctMetaFin":         arred(pct_fin * 100),
+            "pctDesqualificacao": arred(len(reu_desq) / qtd_realizadas * 100) if qtd_realizadas else 0,
+        },
+        "comissao": {
+            "atingimento":   arred(ating),
+            "acelerador":    acel,
+            "estimada":      arred(comissao),
+            "comissionando": ating >= 60,
+            "projecao": {
+                "valorFin":    arred(proj_fin),
+                "qtdReu":      arred(proj_reu),
+                "atingimento": arred(ating_proj),
+                "estimada":    arred(comissao_proj),
+            }
+        },
+        "graficos": {
+            "serieAgendadas":  serie_acts(acts_sdr),
+            "serieRealizadas": serie_acts(reu_realizadas),
+            "serieValores":    serie_deals(deals_ganhos),
+        },
+        "tabelas": {
+            "proximasReunioes": [{"deal_id": a.get("deal_id"), "nome": a.get("subject", ""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in proximas],
+            "reunioesGanhas":   [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time", ""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0)} for d in deals_ganhos],
+            "reunioesDesq": [{
+                "deal_id":      a.get("deal_id"),
+                "proprietario": next((d.get("owner_name") or (d.get("user_id") or {}).get("name","") for d in deals if d["id"] == a.get("deal_id")), "--")
+            } for a in reu_desq[:10]],
+        },
+        "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
     }
 
-    return `<div class="mes-card ${cardClass}">
-      <div class="mes-header">
-        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
-        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
-      </div>
-      ${metricas}${comissaoHtml}${acao}
-    </div>`;
-  }).join('');
-}
 
-function abrirModal(idx) {
-  pendenteMesIdx = idx;
-  const r = dadosComissao[idx];
-  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
-  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
-  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
 
-function fecharModal() {
-  document.getElementById('modalOverlay').classList.add('hidden');
-  pendenteMesIdx = null;
-}
+def is_closer(cargo):
+    """Retorna True se o cargo é Closer."""
+    return "closer" in norm(cargo)
 
-async function confirmarDefinitivo() {
-  if (pendenteMesIdx === null) return;
-  const r = dadosComissao[pendenteMesIdx];
-  document.getElementById('btnOk').disabled = true;
+def buscar_referidos():
+    """Busca deals do filtro de referidos (mês atual)."""
+    todos, start = [], 0
+    mes_atual = date.today().strftime("%Y-%m")
+    while True:
+        resp = req.get(f"{BASE_V1}/deals", params={
+            "filter_id": FILTER_REFERIDOS,
+            "limit": 500,
+            "start": start,
+            "api_token": API_KEY
+        }, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        lote = data.get("data") or []
+        for d in lote:
+            add_time = str(d.get("add_time", ""))[:7]
+            if add_time == mes_atual:
+                todos.append(d)
+        mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
+        if not mais or not lote:
+            break
+        start += 500
+    return todos
 
-  // Salva confirmação no localStorage
-  const agora = new Date();
-  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-  const chave = `confirmacao_${r.ano}_${r.mes}`;
-  localStorage.setItem(chave, dataHora);
-  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
+# ── CÁLCULO CLOSER ───────────────────────────────────────────
+def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos):
+    hoje      = date.today()
+    mes_atual = hoje.strftime("%Y-%m")
 
-  // Envia e-mail de confirmação
-  await fetch('/api/comissao/confirmar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
-  });
+    # Deals ganhos onde ele é proprietário
+    deals_ganhos = [
+        d for d in deals
+        if d.get("status") == "won"
+        and str((d.get("user_id") or {}).get("id") if isinstance(d.get("user_id"), dict) else d.get("user_id")) == str(user_id)
+    ]
 
-  fecharModal();
-  document.getElementById('successOverlay').classList.remove('hidden');
-  setTimeout(() => {
-    document.getElementById('successOverlay').classList.add('hidden');
-    renderComissao();
-  }, 3500);
+    valor_bruto = sum(float(d.get("value") or 0) for d in deals_ganhos)
+    valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
 
-  document.getElementById('btnOk').disabled = false;
-}
+    # Mapa deal_id -> "Reunião Validada?"
+    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
 
-document.getElementById('modalOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modalOverlay')) fecharModal();
-});
-</script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js">
+    # Achar user_id do Matheus Paz
+    users_pipe = buscar_users()
+    matheus_id = str(next((uid for uid, uname in users_pipe.items() if norm(uname) == norm("Matheus Paz")), ""))
 
-// ── PAGINAÇÃO ────────────────────────────────────────────────
-const PAG_SIZE = 10;
-const _pagState = {};
+    # Times Inside Sales — podem agendar para si mesmos
+    TIMES_INSIDE_SALES = ["orion", "latam"]
+    is_inside_sales = norm(colaborador.get("time", "")) in TIMES_INSIDE_SALES
 
-function pagInit(id, dados, renderFn) {
-  _pagState[id] = { dados, pagina: 0, renderFn };
-  pagRender(id);
-}
+    # Activities do mês onde o closer é owner do DEAL (não da activity)
+    acts_closer = [
+        a for a in activities
+        if str(a.get("due_date", ""))[:7] == mes_atual
+        and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
+        and (is_inside_sales or str(a.get("owner_id", "")) != str(user_id))
+        and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
+    ]
 
-function pagRender(id) {
-  const s = _pagState[id];
-  if (!s) return;
-  const { dados, pagina, renderFn } = s;
-  const total   = dados.length;
-  const totalPag = Math.ceil(total / PAG_SIZE);
-  const inicio  = pagina * PAG_SIZE;
-  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
+    # Realizadas = done
+    reu_realizadas = [
+        a for a in acts_closer
+        if a.get("done") == True or a.get("status") == "done"
+    ]
 
-  const tbody = document.getElementById(id);
-  if (!tbody) return;
+    # Validadas = realizadas + Reunião Validada? = Sim
+    reu_validadas = [
+        a for a in reu_realizadas
+        if a.get("deal_id") and a.get("deal_id") in deal_ids_validos
+    ]
 
-  if (!fatia.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
-  } else {
-    tbody.innerHTML = fatia.map(renderFn).join('');
-  }
+    qtd_realizadas = len(reu_realizadas)
+    qtd_validadas  = len(reu_validadas)
+    pct_validadas  = arred(qtd_validadas / qtd_realizadas * 100) if qtd_realizadas else 0
 
-  // Paginação
-  const pagWrapId = id + '_pag';
-  let pagWrap = document.getElementById(pagWrapId);
-  if (!pagWrap) {
-    pagWrap = document.createElement('div');
-    pagWrap.id = pagWrapId;
-    pagWrap.className = 'pag-wrap';
-    tbody.closest('table').after(pagWrap);
-  }
+    # Referidos do mês onde ele é proprietário
+    refs_closer = [
+        d for d in referidos
+        if str((d.get("user_id") or {}).get("id") if isinstance(d.get("user_id"), dict) else d.get("user_id")) == str(user_id)
+    ]
 
-  if (total <= PAG_SIZE) {
-    pagWrap.innerHTML = '';
-    return;
-  }
+    # % Meta financeira
+    pct_fin = (valor_multi / metas["meta_fin"]) if metas["meta_fin"] > 0 else 0
+    ating   = pct_fin * 100
 
-  pagWrap.innerHTML = `
-    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
-    <div class="pag-btns">
-      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
-      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
-    </div>`;
-}
+    acel     = acelerador(ating)
+    comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
 
-function pagIr(id, nova) {
-  if (!_pagState[id]) return;
-  _pagState[id].pagina = nova;
-  pagRender(id);
-}
+    # Projeção
+    dp = dias_uteis_passados()
+    du = metas["dias_uteis"]
+    proj_fin     = (valor_multi / dp) * du
+    pct_proj_fin = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
+    acel_proj    = acelerador(pct_proj_fin)
+    comissao_proj = ote["variavel"] * (pct_proj_fin / 100) * metas["rampagem"] * acel_proj
 
-// ── ABAS ────────────────────────────────────────────────────
-function mudarAba(aba, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
-  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
-  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
-}
+    def serie_acts(lista):
+        mapa = {}
+        for a in lista:
+            dt = str(a.get("due_date", ""))[:10]
+            if dt:
+                mapa[dt] = mapa.get(dt, 0) + 1
+        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
 
-// ── COMISSÃO ────────────────────────────────────────────────
-const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-let comissaoCarregada = false;
-let dadosComissao = [];
-let pendenteMesIdx = null;
+    def serie_deals(lista):
+        mapa = {}
+        for d in lista:
+            dt = str(d.get("won_time", ""))[:10]
+            if dt:
+                v = float(cf(d, CF_MULTIPLICADOR) or 0)
+                mapa[dt] = mapa.get(dt, 0) + v
+        return [{"data": k, "valor": v} for k, v in sorted(mapa.items())]
 
-const fmtMoneyC = v => {
-  if (!v || v === 'nan') return 'R$ 0';
-  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
-  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
-  const n = Number(s);
-  if (isNaN(n) || n === 0) return 'R$ 0';
-  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
-  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-};
-const fmtPctC = v => v && v !== 'nan' ? v : '--';
+    def serie_referidos(lista):
+        mapa = {}
+        for d in lista:
+            dt = str(d.get("add_time", ""))[:10]
+            if dt:
+                mapa[dt] = mapa.get(dt, 0) + 1
+        return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
 
-async function carregarComissao() {
-  comissaoCarregada = true;
-  try {
-    const resp = await fetch('/api/comissao');
-    const data = await resp.json();
-    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
-    dadosComissao = data.registros;
-    // Aplica confirmações salvas no localStorage
-    dadosComissao.forEach(r => {
-      const chave = `confirmacao_${r.ano}_${r.mes}`;
-      const salvo = localStorage.getItem(chave);
-      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
-        r.confirmacao = salvo;
-      }
-    });
-    renderComissao();
-  } catch(e) {
-    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
-  }
-}
+    def owner_name(d):
+        uid = d.get("user_id")
+        if isinstance(uid, dict):
+            return uid.get("name", "--")
+        return "--"
 
-function renderComissao() {
-  const el = document.getElementById('listaMeses');
-  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
+    foto = url_foto(nome)
 
-  el.innerHTML = dadosComissao.map((r, i) => {
-    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
-    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
-    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
-    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
-
-    const comissaoCol = elegivel
-      ? `<th style="color:var(--yellow)">Comissão</th>`
-      : `<th style="color:var(--red)">Comissão</th>`;
-    const comissaoVal = elegivel
-      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
-      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
-
-    const metricas = `
-      <table class="com-table">
-        <thead>
-          <tr>
-            <th>Vol. Reuniões</th>
-            <th>Valor Financeiro</th>
-            <th>% Reunião</th>
-            <th>% Financeiro</th>
-            <th>% Meta Final</th>
-            <th>Acelerador</th>
-            <th>Variável OTE</th>
-            <th>Rampagem</th>
-            ${comissaoCol}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${r.vol_reuniao || '--'}</td>
-            <td>${fmtMoneyC(r.valor_financeiro)}</td>
-            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
-            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
-            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
-            <td>${r.acelerador || '--'}</td>
-            <td>${fmtMoneyC(r.variavel_ote)}</td>
-            <td>${r.rampagem || '--'}</td>
-            ${comissaoVal}
-          </tr>
-        </tbody>
-      </table>`;
-
-    const comissaoHtml = '';
-
-    let acao = '';
-    if (elegivel && confirmado) {
-      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
-    } else if (elegivel) {
-      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
+    return {
+        "tipo": "closer",
+        "colaborador": {**colaborador, "foto": foto},
+        "metas": metas,
+        "ote":   ote,
+        "kpis": {
+            "reunioesRealizadas": qtd_realizadas,
+            "reunioesValidadas":  qtd_validadas,
+            "pctValidadas":       pct_validadas,
+            "valorBruto":         arred(valor_bruto),
+            "valorMultiplicador": arred(valor_multi),
+            "pctMetaFin":         arred(pct_fin * 100),
+            "volumeReferidos":    len(refs_closer),
+        },
+        "comissao": {
+            "atingimento":   arred(ating),
+            "acelerador":    acel,
+            "estimada":      arred(comissao),
+            "comissionando": ating >= 60,
+            "projecao": {
+                "valorFin":    arred(proj_fin),
+                "atingimento": arred(pct_proj_fin),
+                "estimada":    arred(comissao_proj),
+            }
+        },
+        "graficos": {
+            "serieRealizadas": serie_acts(reu_realizadas),
+            "serieValores":    serie_deals(deals_ganhos),
+            "serieReferidos":  serie_referidos(refs_closer),
+        },
+        "tabelas": {
+            "reunioesRealizadas": [{"deal_id": a.get("deal_id"), "nome": a.get("subject",""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in reu_realizadas],
+            "ganhos": [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in deals_ganhos],
+            "referidos": [{"deal_id": d["id"], "nome": d.get("title"), "data_criacao": str(d.get("add_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in refs_closer],
+        },
+        "tabela_price_url": TABELA_PRICE_URL,
+        "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
     }
 
-    return `<div class="mes-card ${cardClass}">
-      <div class="mes-header">
-        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
-        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
-      </div>
-      ${metricas}${comissaoHtml}${acao}
-    </div>`;
-  }).join('');
-}
-
-function abrirModal(idx) {
-  pendenteMesIdx = idx;
-  const r = dadosComissao[idx];
-  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
-  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
-  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
-
-function fecharModal() {
-  document.getElementById('modalOverlay').classList.add('hidden');
-  pendenteMesIdx = null;
-}
-
-async function confirmarDefinitivo() {
-  if (pendenteMesIdx === null) return;
-  const r = dadosComissao[pendenteMesIdx];
-  document.getElementById('btnOk').disabled = true;
-
-  // Salva confirmação no localStorage
-  const agora = new Date();
-  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-  const chave = `confirmacao_${r.ano}_${r.mes}`;
-  localStorage.setItem(chave, dataHora);
-  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
-
-  // Envia e-mail de confirmação
-  await fetch('/api/comissao/confirmar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
-  });
-
-  fecharModal();
-  document.getElementById('successOverlay').classList.remove('hidden');
-  setTimeout(() => {
-    document.getElementById('successOverlay').classList.add('hidden');
-    renderComissao();
-  }, 3500);
-
-  document.getElementById('btnOk').disabled = false;
-}
-
-document.getElementById('modalOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modalOverlay')) fecharModal();
-});
-</script>
-<style>
-  :root {
-    --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
-    --border: #222; --yellow: #f5c400; --yellow-dim: #f5c40022;
-    --white: #f0f0f0; --muted: #888; --green: #2adf8a; --red: #ff4c4c;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--white); font-family:var(--font-body); min-height:100vh; padding:clamp(12px,2vw,28px); background-image:radial-gradient(ellipse at 80% 0%,#f5c40008 0%,transparent 60%); }
-
-  #loading { display:flex; flex-direction:column; align-items:center; justify-content:center; height:80vh; gap:16px; }
-  .spinner { width:48px; height:48px; border:3px solid var(--border); border-top-color:var(--yellow); border-radius:50%; animation:spin 0.8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .loading-txt { font-family:var(--font-mono); font-size:12px; color:var(--muted); letter-spacing:2px; }
-
-  #dashboard { display:none; }
-
-  /* HEADER */
-  .header { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:24px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--border); }
-
-  /* 1 - Avatar maior */
-  .avatar { width:clamp(90px,10vw,130px); height:clamp(90px,10vw,130px); border-radius:50%; background:var(--surface2); border:3px solid var(--yellow); display:flex; align-items:center; justify-content:center; font-size:clamp(32px,4vw,48px); font-weight:700; color:var(--yellow); overflow:hidden; flex-shrink:0; }
-  .avatar img { width:100%; height:100%; object-fit:cover; }
-
-  .user-name { font-family:var(--font-display); font-size:clamp(24px,3vw,38px); letter-spacing:1px; color:var(--white); line-height:1; }
-  /* 1 - cinza mais claro no cargo e metas */
-  .user-cargo { font-size:clamp(11px,1.2vw,14px); color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-top:6px; }
-  .metas-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .meta-tag { font-family:var(--font-mono); font-size:clamp(11px,1.1vw,13px); padding:5px 14px; border-radius:4px; border:1px solid var(--border); color:var(--muted); }
-  .meta-tag span { color:var(--yellow); font-weight:500; }
-
-  /* Gauge */
-  .gauge-wrap { display:flex; flex-direction:column; align-items:center; }
-  .gauge-svg { width:clamp(200px,22vw,300px); height:auto; overflow:visible; }
-
-  /* Logo */
-  .logo-box { border:1px solid var(--border); padding:10px 20px; border-radius:8px; background:var(--surface); display:flex; align-items:center; justify-content:center; height:clamp(90px,10vw,130px); min-width:clamp(120px,12vw,180px); }
-  .logo-box img { max-height:100%; max-width:100%; object-fit:contain; }
-
-  /* COMISSÃO */
-  .comissao-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; padding:14px 18px; background:var(--surface); border:1px solid var(--border); border-radius:8px; }
-  .comissao-badge { font-family:var(--font-mono); font-size:11px; padding:4px 12px; border-radius:4px; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
-  .comissao-badge.on  { background:#2adf8a22; color:var(--green); border:1px solid var(--green); }
-  .comissao-badge.off { background:#ff4c4c22; color:var(--red);   border:1px solid var(--red); }
-  .comissao-info { font-size:13px; color:var(--muted); }
-  .comissao-info span { color:var(--white); font-weight:600; }
-
-  /* KPI GRID */
-  .kpi-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-bottom:28px; }
-  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 12px; display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden; transition:border-color 0.2s; animation:fadeUp 0.4s ease both; }
-  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--yellow); opacity:0; transition:opacity 0.2s; }
-  .kpi-card:hover { border-color:var(--yellow); }
-  .kpi-card:hover::before { opacity:1; }
-  .kpi-label { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); line-height:1.3; }
-  .kpi-value { font-family:var(--font-display); font-size:clamp(22px,2.5vw,34px); color:var(--white); line-height:1; }
-  .kpi-value.yellow { color:var(--yellow); }
-  .kpi-value.green  { color:var(--green); }
-  .kpi-value.red    { color:var(--red); }
-  .kpi-sub { font-family:var(--font-mono); font-size:10px; color:var(--muted); }
-
-  /* CHARTS */
-  .charts-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:28px; }
-  .chart-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; animation:fadeUp 0.4s ease both; }
-  .chart-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:14px; }
-  .chart-canvas-wrap { height:150px; position:relative; }
-
-  /* TABLES */
-  .tables-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
-  .table-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; overflow:hidden; animation:fadeUp 0.4s ease both; }
-  .table-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:14px; }
-  .data-table { width:100%; border-collapse:collapse; font-size:12px; }
-  .data-table th { text-align:left; color:var(--muted); font-family:var(--font-mono); font-size:10px; font-weight:400; letter-spacing:1px; padding-bottom:8px; border-bottom:1px solid var(--border); text-transform:uppercase; }
-  .data-table td { padding:9px 0; border-bottom:1px solid #1a1a1a; color:var(--white); font-size:12px; vertical-align:middle; }
-  .data-table tr:last-child td { border-bottom:none; }
-  .data-table td.mono  { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
-  .data-table td.money { font-family:var(--font-mono); color:var(--green); font-size:11px; }
-  .empty-row { font-family:var(--font-mono); font-size:11px; color:var(--muted); padding:12px 0; }
-
-  /* 7 - Link deal */
-  .deal-link { font-family:var(--font-mono); font-size:11px; color:var(--yellow); text-decoration:none; opacity:0.8; }
-  .deal-link:hover { opacity:1; text-decoration:underline; }
-
-  /* FOOTER */
-  .footer { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-top:28px; padding-top:16px; border-top:1px solid var(--border); }
-  .footer-label { font-size:10px; text-transform:uppercase; letter-spacing:3px; color:var(--muted); }
-  .footer-date  { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
-
-  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-
-  /* RESPONSIVO */
-  @media (max-width: 1100px) {
-    .kpi-grid { grid-template-columns:repeat(4,1fr); }
-    .charts-row { grid-template-columns:1fr 1fr; }
-    .tables-row { grid-template-columns:1fr 1fr; }
-  }
-  @media (max-width: 720px) {
-    .header { grid-template-columns:1fr; grid-template-rows:auto auto auto; }
-    .header-left { justify-content:center; }
-    .header-right { justify-content:center; }
-    .gauge-wrap { grid-column:1/3; }
-    .logo-box   { grid-column:1/3; height:70px; }
-    .kpi-grid   { grid-template-columns:repeat(2,1fr); }
-    .charts-row { grid-template-columns:1fr; }
-    .tables-row { grid-template-columns:1fr; }
-  }
-
-  /* ABAS DE NAVEGAÇÃO */
-  .tabs { display:flex; gap:4px; margin-bottom:24px; border-bottom:1px solid var(--border); }
-  .tab-btn { font-family:var(--font-mono); font-size:11px; padding:10px 20px; border:none; background:transparent; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; letter-spacing:1.5px; text-transform:uppercase; transition:all 0.2s; }
-  .tab-btn:hover { color:var(--white); }
-  .tab-btn.active { color:var(--yellow); border-bottom-color:var(--yellow); }
-
-  /* PÁGINA COMISSÃO */
-  .formula-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px 22px; margin-bottom:24px; }
-  .formula-label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
-  .formula { font-family:var(--font-mono); font-size:13px; color:var(--white); }
-  .formula span { color:var(--yellow); }
-  .mes-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:24px; margin-bottom:16px; }
-  .mes-card.confirmado { border-color:#2adf8a44; }
-  .mes-card.nao-elegivel { border-color:#ff4c4c33; }
-  .mes-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
-  .mes-titulo { font-family:var(--font-display); font-size:26px; letter-spacing:1px; color:var(--white); }
-  .mes-nivel { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:4px; letter-spacing:1px; }
-  .badge-elegivel { font-family:var(--font-mono); font-size:10px; padding:3px 10px; border-radius:3px; text-transform:uppercase; letter-spacing:1px; }
-  .badge-elegivel.sim { background:#2adf8a22; color:var(--green); border:1px solid var(--green); }
-  .badge-elegivel.nao { background:#ff4c4c22; color:var(--red); border:1px solid var(--red); }
-  .metricas { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-bottom:18px; }
-  .metrica { background:var(--surface2); border-radius:6px; padding:10px 12px; }
-  .metrica-label { font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
-  .metrica-valor { font-family:var(--font-display); font-size:20px; color:var(--white); }
-  .metrica-valor.yellow { color:var(--yellow); }
-  .metrica-valor.green  { color:var(--green); }
-  .comissao-destaque { background:linear-gradient(135deg,#1a1a0a,#111); border:1px solid var(--yellow); border-radius:8px; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
-  .comissao-label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; }
-  .comissao-valor { font-family:var(--font-display); font-size:38px; color:var(--yellow); line-height:1; }
-  .nao-elegivel-msg { background:#ff4c4c11; border:1px solid #ff4c4c33; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--red); }
-  .confirmacao-area { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
-  .btn-confirmar { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:10px 22px; font-family:var(--font-display); font-size:17px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
-  .btn-confirmar:hover { opacity:0.85; }
-  .confirmado-msg { display:flex; align-items:center; gap:8px; }
-  .confirmado-check { color:var(--green); font-size:16px; }
-  .confirmado-txt { font-family:var(--font-mono); font-size:11px; color:var(--green); letter-spacing:1px; }
-  .com-empty { text-align:center; padding:60px 20px; color:var(--muted); font-family:var(--font-mono); font-size:13px; letter-spacing:1px; }
-  /* MODAL */
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:999; padding:20px; }
-  .modal-overlay.hidden { display:none; }
-  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:32px; max-width:460px; width:100%; animation:fadeUp 0.3s ease; }
-  .modal-title { font-family:var(--font-display); font-size:26px; color:var(--yellow); letter-spacing:1px; margin-bottom:14px; }
-  .modal-body { font-size:14px; color:var(--muted); margin-bottom:8px; }
-  .modal-valor { font-family:var(--font-display); font-size:36px; color:var(--white); margin:14px 0 4px; }
-  .modal-mes { font-family:var(--font-mono); font-size:12px; color:var(--muted); margin-bottom:24px; letter-spacing:1px; }
-  .modal-btns { display:flex; gap:12px; justify-content:flex-end; }
-  .btn-cancelar { background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:10px 18px; font-family:var(--font-body); font-size:14px; cursor:pointer; transition:all 0.2s; }
-  .btn-cancelar:hover { border-color:var(--muted); color:var(--white); }
-  .btn-ok { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:10px 22px; font-family:var(--font-display); font-size:18px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
-  .btn-ok:hover { opacity:0.85; }
-  .btn-ok:disabled { opacity:0.4; cursor:not-allowed; }
-  /* SUCCESS */
-  .success-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.92); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
-  .success-overlay.hidden { display:none; }
-  .success-box { text-align:center; animation:fadeUp 0.4s ease; }
-  .success-icon { font-size:64px; margin-bottom:20px; }
-  .success-title { font-family:var(--font-display); font-size:36px; color:var(--green); letter-spacing:2px; margin-bottom:12px; }
-  .success-msg { font-size:15px; color:var(--muted); max-width:380px; line-height:1.6; }
-
-  /* TABELA COMISSÃO */
-  .com-table { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:13px; }
-  .com-table th { text-align:left; font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; padding:0 12px 10px 0; border-bottom:1px solid var(--border); white-space:nowrap; }
-  .com-table td { padding:12px 12px 4px 0; color:var(--white); font-family:var(--font-mono); font-size:13px; }
-  .com-table td.yellow { color:var(--yellow); }
-
-
-  /* SELETOR DE MÊS */
-  .mes-selector { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-  .mes-selector select { background:var(--surface); border:1px solid var(--border); color:var(--white); border-radius:6px; padding:6px 12px; font-family:var(--font-mono); font-size:12px; cursor:pointer; outline:none; }
-  .mes-selector select:focus { border-color:var(--yellow); }
-  .mes-selector label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-  .mes-selector .btn-aplicar { background:var(--yellow); color:#000; border:none; border-radius:6px; padding:6px 16px; font-family:var(--font-display); font-size:14px; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
-  .mes-selector .btn-aplicar:hover { opacity:0.85; }
-  /* PAGINAÇÃO */
-  .pag-wrap { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
-  .pag-info { font-family:var(--font-mono); font-size:10px; color:var(--muted); letter-spacing:1px; }
-  .pag-btns { display:flex; gap:6px; }
-  .pag-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); border-radius:4px; padding:4px 10px; font-family:var(--font-mono); font-size:11px; cursor:pointer; transition:all 0.2s; }
-  .pag-btn:hover:not(:disabled) { border-color:var(--yellow); color:var(--yellow); }
-  .pag-btn:disabled { opacity:0.3; cursor:not-allowed; }
-</style>
-</head>
-<body>
-
-<div id="loading">
-  <div class="spinner"></div>
-  <div class="loading-txt">Carregando dados...</div>
-</div>
-
-<div id="dashboard">
-
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <div class="avatar" id="avatarEl">
-      <span id="avatarInitials">--</span>
-    </div>
-    <div>
-      <div class="user-name" id="userName">--</div>
-      <div class="user-cargo" id="userCargo">--</div>
-      <div class="metas-row">
-        <div class="meta-tag" id="metaReuWrap">Meta Reunião <span id="metaReu">--</span></div>
-        <div class="meta-tag">Meta Financeira <span id="metaFin">--</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gauge centralizado -->
-  <div class="gauge-wrap">
-    <svg class="gauge-svg" viewBox="0 0 260 160">
-      <defs>
-        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#f5c400" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#f5c400"/>
-        </linearGradient>
-      </defs>
-      <!-- Track -->
-      <path d="M 20 140 A 110 110 0 0 1 240 140" fill="none" stroke="#222" stroke-width="14" stroke-linecap="round"/>
-      <!-- Fill -->
-      <path d="M 20 140 A 110 110 0 0 1 240 140" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"
-            stroke-dasharray="346" id="gaugeArc" stroke-dashoffset="346"/>
-      <!-- % no centro geométrico do arco (cx=130, cy=140 que é o centro do semicírculo) -->
-      <text id="gaugeVal" x="130" y="105" text-anchor="middle" dominant-baseline="middle"
-            font-family="'Bebas Neue', sans-serif" font-size="40" fill="#f5c400" letter-spacing="1">0%</text>
-      <text x="130" y="148" text-anchor="middle"
-            font-family="'DM Mono', monospace" font-size="10" fill="#888" letter-spacing="2">ATINGIMENTO GERAL</text>
-    </svg>
-  </div>
-
-  <div class="header-right">
-    <div class="logo-box">
-      <img
-        src="https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.png"
-        onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/negocios87-sketch/fotos_time_comercial/main/logo_board.jpg'"
-        alt="Board Academy"
-      >
-    </div>
-  </div>
-</div>
-
-<!-- ABAS -->
-<div class="tabs">
-  <button class="tab-btn active" onclick="mudarAba('dashboard', this)">Dashboard</button>
-  <button class="tab-btn" onclick="mudarAba('comissao', this)">Comissão</button>
-</div>
-
-<!-- ABA DASHBOARD -->
-<div id="aba-dashboard">
-
-<!-- SELETOR DE MÊS -->
-<div class="mes-selector">
-  <label>Período</label>
-  <select id="selMes">
-    <option value="5">Maio</option>
-    <option value="6">Junho</option>
-    <option value="7">Julho</option>
-    <option value="8">Agosto</option>
-    <option value="9">Setembro</option>
-    <option value="10">Outubro</option>
-    <option value="11">Novembro</option>
-    <option value="12">Dezembro</option>
-  </select>
-  <select id="selAno">
-    <option value="2026">2026</option>
-  </select>
-  <button class="btn-aplicar" onclick="aplicarFiltro()">Aplicar</button>
-  <div style="font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-left:8px;" id="mesAtual">--</div>
-</div>
-
-<!-- COMISSÃO — 4: sem projeção -->
-<div class="comissao-bar">
-  <span class="comissao-badge" id="comissaoBadge">--</span>
-  <div class="comissao-info">
-    Atingimento: <span id="comAtingimento">--</span> &nbsp;·&nbsp;
-    Acelerador: <span id="comAcelerador">--</span> &nbsp;·&nbsp;
-    Comissão estimada: <span id="comEstimada">--</span>
-  </div>
-</div>
-
-<!-- KPIs -->
-<div class="kpi-grid" id="kpiGrid">
-  <div class="kpi-card">
-    <div class="kpi-label">Reuniões Agendadas</div>
-    <div class="kpi-value" id="kpiAgendadas">--</div>
-    <div class="kpi-sub">mês atual</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Reuniões Realizadas</div>
-    <div class="kpi-value" id="kpiRealizadas">--</div>
-    <div class="kpi-sub" id="kpiRealizadasSub">--</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">% Meta Reunião</div>
-    <div class="kpi-value yellow" id="kpiPctReu">--</div>
-    <div class="kpi-sub" id="kpiPctReuSub">--</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">R$ Ganhos</div>
-    <div class="kpi-value green" id="kpiValorBruto">--</div>
-    <div class="kpi-sub">valor bruto</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">R$ Ganhos Multiplicador</div>
-    <div class="kpi-value green" id="kpiValorMulti">--</div>
-    <div class="kpi-sub">com multiplicador</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">% Meta Financeira</div>
-    <div class="kpi-value yellow" id="kpiPctFin">--</div>
-    <div class="kpi-sub" id="kpiPctFinSub">--</div>
-  </div>
-  <!-- 6 - Qualificados em vez de desqualificados -->
-  <div class="kpi-card">
-    <div class="kpi-label">% Qualificadas</div>
-    <div class="kpi-value green" id="kpiQualif">--</div>
-    <div class="kpi-sub">das reuniões</div>
-  </div>
-</div>
-
-<!-- CHARTS -->
-<div class="charts-row" id="chartsRow">
-  <div class="chart-card">
-    <div class="chart-title">Reuniões Agendadas</div>
-    <div class="chart-canvas-wrap"><canvas id="chartAgendadas"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Reuniões Realizadas</div>
-    <div class="chart-canvas-wrap"><canvas id="chartRealizadas"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Valores Ganhos (R$)</div>
-    <div class="chart-canvas-wrap"><canvas id="chartValores"></canvas></div>
-  </div>
-</div>
-
-<!-- TABLES -->
-<div class="tables-row" id="tablesRow">
-  <div class="table-card">
-    <div class="table-title">Próximas Reuniões</div>
-    <table class="data-table">
-      <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
-      <tbody id="tblProximas"></tbody>
-    </table>
-  </div>
-  <div class="table-card">
-    <div class="table-title">Reuniões Ganhas</div>
-    <table class="data-table">
-      <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
-      <tbody id="tblGanhas"></tbody>
-    </table>
-  </div>
-  <!-- 9 - Desq: só link e proprietário -->
-  <div class="table-card">
-    <div class="table-title">Reuniões Desqualificadas</div>
-    <table class="data-table">
-      <thead><tr><th>Lead</th><th>Desqualificado por</th></tr></thead>
-      <tbody id="tblDesq"></tbody>
-    </table>
-  </div>
-</div>
-
-</div><!-- /aba-dashboard -->
-
-<!-- ABA COMISSÃO -->
-<div id="aba-comissao" style="display:none;">
-  <div class="formula-box">
-    <div class="formula-label">Como sua comissão é calculada</div>
-    <div class="formula" style="margin-top:6px;">
-      <span>% Meta Final</span> × <span>Acelerador</span> × <span>Rampagem</span> × <span>Variável OTE</span>
-    </div>
-  </div>
-  <div id="listaMeses"><div class="com-empty">Carregando histórico...</div></div>
-</div>
-
-<!-- MODAL CONFIRMAÇÃO -->
-<div class="modal-overlay hidden" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-title">Confirmar Comissão</div>
-    <div class="modal-body">Você confirma o recebimento de:</div>
-    <div class="modal-valor" id="modalValor">--</div>
-    <div class="modal-mes" id="modalMes">--</div>
-    <div class="modal-btns">
-      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
-      <button class="btn-ok" id="btnOk" onclick="confirmarDefinitivo()">Sim, confirmar</button>
-    </div>
-  </div>
-</div>
-
-<!-- SUCCESS -->
-<div class="success-overlay hidden" id="successOverlay">
-  <div class="success-box">
-    <div class="success-icon">✅</div>
-    <div class="success-title">Comissão Confirmada!</div>
-    <div class="success-msg">Aguarde o e-mail do financeiro para geração da nota.</div>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<div class="footer">
-  <div style="display:flex;align-items:center;gap:16px;">
-    <div class="footer-label">Inteligência Comercial · Board Academy</div>
-    <a id="tabelaPriceWrap" href="https://inspiring-marshmallow-1ba.netlify.app/" target="_blank" style="display:none;font-family:var(--font-mono);font-size:10px;color:var(--yellow);text-decoration:none;letter-spacing:1px;border:1px solid var(--yellow);padding:4px 12px;border-radius:4px;">Tabela Price →</a>
-  </div>
-  <a href="/logout" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-decoration:none;letter-spacing:2px;text-transform:uppercase;">Sair →</a>
-  <div class="footer-date" id="footerDate">--</div>
-</div>
-
-</div>
-
-<script>
-Chart.register(ChartDataLabels);
-
-const API_URL_BASE = '/api/sdr';
-const API_CLOSER_BASE = '/api/closer';
-let API_URL = '/api/sdr';
-
-function getApiUrl(base) {
-  const mes = document.getElementById('selMes')?.value || new Date().getMonth()+1;
-  const ano = document.getElementById('selAno')?.value || new Date().getFullYear();
-  return `${base}?mes=${mes}&ano=${ano}`;
-}
-
-function aplicarFiltro() {
-  // Mostra loading
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('loading').style.display   = 'flex';
-  document.querySelector('.loading-txt').textContent = 'Buscando dados...';
-
-  if (session_tipo === 'closer') {
-    fetchCloser();
-  } else {
-    fetchDados();
-  }
-}
-const REFRESH_MS = 5 * 60 * 1000;
-const PIPE_URL   = 'https://boardacademy.pipedrive.com/deal/';
-
-let chartAg = null, chartRe = null, chartVa = null;
-
-function carregarFoto(fotoUrl) {
-  if (fotoUrl) {
-    document.getElementById('avatarEl').innerHTML = `<img src="${fotoUrl}">`;
-  }
-}
-
-const fmtMoney = v => {
-  if (!v && v !== 0) return 'R$ 0';
-  const n = Number(v);
-  if (isNaN(n)) return 'R$ 0';
-  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-};
-const fmtPct  = v => v.toFixed(1) + '%';
-
-function setText(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
-}
-// 8 - data em dd/mm
-const fmtDate = s => {
-  if (!s) return '--';
-  const parts = s.substring(0,10).split('-');
-  return `${parts[2]}/${parts[1]}`;
-};
-// 7 - link deal
-const dealLink = id => id
-  ? `<a class="deal-link" href="${PIPE_URL}${id}" target="_blank">#${id}</a>`
-  : '--';
-
-// 2 - Gauge com novo viewBox
-function atualizarGauge(pct) {
-  const total = 346;
-  const fill  = Math.min(pct / 100, 1) * total;
-  document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', total - fill);
-  document.getElementById('gaugeVal').textContent = fmtPct(pct);
-}
-
-const commonOpts = {
-  responsive: true, maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: { backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1, titleColor:'#f5c400', bodyColor:'#aaa', titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'DM Mono',size:11} },
-    datalabels: { color:'#888', font:{family:'DM Mono',size:10}, anchor:'end', align:'top', offset:2, formatter: v => v === 0 ? '' : v }
-  },
-  scales: {
-    x: { grid:{color:'#1a1a1a'}, ticks:{color:'#444',font:{family:'DM Mono',size:10}} },
-    y: { grid:{color:'#1a1a1a'}, ticks:{color:'#444',font:{family:'DM Mono',size:10}}, beginAtZero:true }
-  }
-};
-
-function buildChart(id, type, labels, data, color, isMoney=false) {
-  const ctx  = document.getElementById(id);
-  const opts = JSON.parse(JSON.stringify(commonOpts));
-  if (isMoney) {
-    opts.plugins.datalabels.formatter = v => v === 0 ? '' : (v/1000).toFixed(1).replace('.0','') + 'K';
-    opts.scales.y.ticks.callback = v => 'R$' + (v/1000).toFixed(0) + 'k';
-  }
-  const dataset = type === 'bar'
-    ? { data, backgroundColor: color + '44', borderColor: color, borderWidth:1, borderRadius:3 }
-    : { data, borderColor: color, backgroundColor: color + '11', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor: color };
-  return new Chart(ctx, { type, data:{ labels, datasets:[dataset] }, options: opts });
-}
-
-// 8 - formato dd/mm nos gráficos
-function fmtLabel(iso) {
-  const p = iso.split('-');
-  return `${p[2]}/${p[1]}`;
-}
-
-function atualizarCharts(graficos) {
-  const agLabels = graficos.serieAgendadas.map(x => fmtLabel(x.data));
-  const agData   = graficos.serieAgendadas.map(x => x.qtd);
-  const reLabels = graficos.serieRealizadas.map(x => fmtLabel(x.data));
-  const reData   = graficos.serieRealizadas.map(x => x.qtd);
-  const vaLabels = graficos.serieValores.map(x => fmtLabel(x.data));
-  const vaData   = graficos.serieValores.map(x => x.valor);
-
-  if (chartAg) chartAg.destroy();
-  if (chartRe) chartRe.destroy();
-  if (chartVa) chartVa.destroy();
-
-  chartAg = buildChart('chartAgendadas', 'line', agLabels, agData, '#f5c400');
-  chartRe = buildChart('chartRealizadas', 'line', reLabels, reData, '#2adf8a');
-  chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
-}
-
-function renderTabela(tbodyId, dados, renderFn) {
-  // Suporte a chamada antiga (array de strings) e nova (array de objetos + fn)
-  if (typeof dados === 'string' || (Array.isArray(dados) && typeof dados[0] === 'string')) {
-    const el = document.getElementById(tbodyId);
-    if (!el) return;
-    const arr = Array.isArray(dados) ? dados : [dados];
-    if (!arr.length) {
-      el.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
-      return;
-    }
-    el.innerHTML = arr.join('');
-    return;
-  }
-  // Nova: com paginação
-  if (!renderFn) return;
-  pagInit(tbodyId, dados || [], renderFn);
-}
-
-function render(d) {
-  const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
-  setText('avatarInitials', iniciais);
-  setText('userName', d.colaborador.nome);
-  setText('userCargo', `${d.colaborador.cargo} · ${d.colaborador.time}`);
-  setText('metaReu', d.metas.meta_reu);
-  setText('metaFin', fmtMoney(d.metas.meta_fin));
-
-  atualizarGauge(d.comissao.atingimento);
-
-  const badge = document.getElementById('comissaoBadge');
-  if (badge) badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
-  if (badge) badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
-  setText('comAtingimento', fmtPct(d.comissao.atingimento));
-  setText('comAcelerador', 'x' + d.comissao.acelerador);
-  setText('comEstimada', fmtMoney(d.comissao.estimada));
-
-  setText('kpiAgendadas', d.kpis.reunioesAgendadas);
-  setText('kpiRealizadas', d.kpis.reunioesRealizadas);
-  setText('kpiRealizadasSub', `de ${d.kpis.reunioesAgendadas} agendadas`);
-  setText('kpiPctReu', fmtPct(d.kpis.pctMetaReu));
-  setText('kpiPctReuSub', `meta: ${d.metas.meta_reu}`);
-  setText('kpiValorBruto', fmtMoney(d.kpis.valorBruto));
-  setText('kpiValorMulti', fmtMoney(d.kpis.valorMultiplicador));
-  setText('kpiPctFin', fmtPct(d.kpis.pctMetaFin));
-  setText('kpiPctFinSub', `meta: ${fmtMoney(d.metas.meta_fin)}`);
-  // 6 - % qualificadas = 100 - % desqualificadas
-  setText('kpiQualif', fmtPct(Math.max(0, 100 - d.kpis.pctDesqualificacao)));
-
-  atualizarCharts(d.graficos);
-
-  // 7 - deal como link nas próximas reuniões
-  renderTabela('tblProximas', d.tabelas.proximasReunioes, r =>
-    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data)}</td><td class="mono">${r.hora||'--'}</td></tr>`
-  );
-
-  // 7 - deal como link nas ganhas
-  renderTabela('tblGanhas', d.tabelas.reunioesGanhas, r =>
-    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_ganho)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
-  );
-
-  // 9 - desq: só link e proprietário
-  renderTabela('tblDesq', d.tabelas.reunioesDesq, r =>
-    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.proprietario||'--'}</td></tr>`
-  );
-
-  setText('footerDate', `Atualizado em ${d.atualizadoEm}`);
-  carregarFoto(d.colaborador.foto);
-
-  // Mês atual
-  const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const agora = new Date();
-  const mesSel = parseInt(document.getElementById('selMes')?.value || agora.getMonth()+1);
-  const anoSel = parseInt(document.getElementById('selAno')?.value || agora.getFullYear());
-  document.getElementById('mesAtual').textContent = meses[mesSel] + ' / ' + anoSel;
-
-  document.getElementById('loading').style.display   = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-}
-
-async function fetchDados() {
-  try {
-    const resp = await fetch(getApiUrl(API_URL_BASE));
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    if (data.erro) throw new Error(data.erro);
-    render(data);
-  } catch(err) {
-    document.querySelector('.loading-txt').textContent = 'Erro: ' + err.message;
-    console.error(err);
-  }
-}
-
-async function init() {
-  // Detecta tipo (SDR ou Closer)
-  const tipoResp = await fetch('/api/tipo');
-  const tipoData = await tipoResp.json();
-  const tipo = tipoData.tipo || 'sdr';
-  session_tipo = tipo;
-
-  // Inicializa seletor com mês atual
-  const agr = new Date();
-  const selM = document.getElementById('selMes');
-  const selA = document.getElementById('selAno');
-  if (selM) selM.value = agr.getMonth() + 1;
-  if (selA) selA.value = agr.getFullYear();
-
-  if (tipo === 'closer') {
-    // Ajusta UI para Closer
-    document.title = 'Dashboard Closer – Board Academy';
-    // Remove meta reunião do header
-    document.getElementById('metaReuWrap').style.display = 'none';
-    // Muda KPIs
-    document.getElementById('kpiGrid').innerHTML = kpiGridCloser();
-    // Muda gráficos
-    document.getElementById('chartsRow').innerHTML = chartsRowCloser();
-    // Muda tabelas
-    document.getElementById('tablesRow').innerHTML = tablesRowCloser();
-    // Mostra atalho tabela price
-    document.getElementById('tabelaPriceWrap').style.display = 'block';
-    await fetchCloser();
-    setInterval(fetchCloser, REFRESH_MS);
-  } else {
-    await fetchDados();
-    setInterval(fetchDados, REFRESH_MS);
-  }
-}
-
-let session_tipo = 'sdr';
-
-init();
-
-
-// ── PAGINAÇÃO ────────────────────────────────────────────────
-const PAG_SIZE = 10;
-const _pagState = {};
-
-function pagInit(id, dados, renderFn) {
-  _pagState[id] = { dados, pagina: 0, renderFn };
-  pagRender(id);
-}
-
-function pagRender(id) {
-  const s = _pagState[id];
-  if (!s) return;
-  const { dados, pagina, renderFn } = s;
-  const total   = dados.length;
-  const totalPag = Math.ceil(total / PAG_SIZE);
-  const inicio  = pagina * PAG_SIZE;
-  const fatia   = dados.slice(inicio, inicio + PAG_SIZE);
-
-  const tbody = document.getElementById(id);
-  if (!tbody) return;
-
-  if (!fatia.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Nenhum registro</td></tr>`;
-  } else {
-    tbody.innerHTML = fatia.map(renderFn).join('');
-  }
-
-  // Paginação
-  const pagWrapId = id + '_pag';
-  let pagWrap = document.getElementById(pagWrapId);
-  if (!pagWrap) {
-    pagWrap = document.createElement('div');
-    pagWrap.id = pagWrapId;
-    pagWrap.className = 'pag-wrap';
-    tbody.closest('table').after(pagWrap);
-  }
-
-  if (total <= PAG_SIZE) {
-    pagWrap.innerHTML = '';
-    return;
-  }
-
-  pagWrap.innerHTML = `
-    <span class="pag-info">${inicio+1}–${Math.min(inicio+PAG_SIZE, total)} de ${total}</span>
-    <div class="pag-btns">
-      <button class="pag-btn" onclick="pagIr('${id}', ${pagina-1})" ${pagina === 0 ? 'disabled' : ''}>← Anterior</button>
-      <button class="pag-btn" onclick="pagIr('${id}', ${pagina+1})" ${pagina >= totalPag-1 ? 'disabled' : ''}>Próxima →</button>
-    </div>`;
-}
-
-function pagIr(id, nova) {
-  if (!_pagState[id]) return;
-  _pagState[id].pagina = nova;
-  pagRender(id);
-}
-
-// ── ABAS ────────────────────────────────────────────────────
-function mudarAba(aba, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('aba-dashboard').style.display = aba === 'dashboard' ? 'block' : 'none';
-  document.getElementById('aba-comissao').style.display  = aba === 'comissao'  ? 'block' : 'none';
-  if (aba === 'comissao' && !comissaoCarregada) carregarComissao();
-}
-
-// ── COMISSÃO ────────────────────────────────────────────────
-const NOMES_MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-let comissaoCarregada = false;
-let dadosComissao = [];
-let pendenteMesIdx = null;
-
-const fmtMoneyC = v => {
-  if (!v || v === 'nan') return 'R$ 0';
-  // Remove R$, espaços, pontos de milhar; troca vírgula por ponto
-  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
-  const n = Number(s);
-  if (isNaN(n) || n === 0) return 'R$ 0';
-  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000)    return 'R$ ' + (n/1000).toFixed(1).replace('.0','') + 'K';
-  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-};
-const fmtPctC = v => v && v !== 'nan' ? v : '--';
-
-async function carregarComissao() {
-  comissaoCarregada = true;
-  try {
-    const resp = await fetch('/api/comissao');
-    const data = await resp.json();
-    if (data.erro) { document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro: ' + data.erro + '</div>'; return; }
-    dadosComissao = data.registros;
-    // Aplica confirmações salvas no localStorage
-    dadosComissao.forEach(r => {
-      const chave = `confirmacao_${r.ano}_${r.mes}`;
-      const salvo = localStorage.getItem(chave);
-      if (salvo && (!r.confirmacao || r.confirmacao.trim() === '' || r.confirmacao === 'nan')) {
-        r.confirmacao = salvo;
-      }
-    });
-    renderComissao();
-  } catch(e) {
-    document.getElementById('listaMeses').innerHTML = '<div class="com-empty">Erro ao carregar</div>';
-  }
-}
-
-function renderComissao() {
-  const el = document.getElementById('listaMeses');
-  if (!dadosComissao.length) { el.innerHTML = '<div class="com-empty">Nenhum registro encontrado.</div>'; return; }
-
-  el.innerHTML = dadosComissao.map((r, i) => {
-    const elegivel   = String(r.elegivel || '').toLowerCase() === 'sim';
-    const confirmado = r.confirmacao && r.confirmacao.trim() !== '' && r.confirmacao !== 'nan';
-    const mesNome    = NOMES_MESES[parseInt(r.mes)] || r.mes;
-    const cardClass  = confirmado ? 'confirmado' : (!elegivel ? 'nao-elegivel' : '');
-
-    const comissaoCol = elegivel
-      ? `<th style="color:var(--yellow)">Comissão</th>`
-      : `<th style="color:var(--red)">Comissão</th>`;
-    const comissaoVal = elegivel
-      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
-      : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
-
-    const metricas = `
-      <table class="com-table">
-        <thead>
-          <tr>
-            <th>Vol. Reuniões</th>
-            <th>Valor Financeiro</th>
-            <th>% Reunião</th>
-            <th>% Financeiro</th>
-            <th>% Meta Final</th>
-            <th>Acelerador</th>
-            <th>Variável OTE</th>
-            <th>Rampagem</th>
-            ${comissaoCol}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${r.vol_reuniao || '--'}</td>
-            <td>${fmtMoneyC(r.valor_financeiro)}</td>
-            <td class="yellow">${fmtPctC(r.pct_reuniao)}</td>
-            <td class="yellow">${fmtPctC(r.pct_financeiro)}</td>
-            <td class="yellow">${fmtPctC(r.pct_meta_final)}</td>
-            <td>${r.acelerador || '--'}</td>
-            <td>${fmtMoneyC(r.variavel_ote)}</td>
-            <td>${r.rampagem || '--'}</td>
-            ${comissaoVal}
-          </tr>
-        </tbody>
-      </table>`;
-
-    const comissaoHtml = '';
-
-    let acao = '';
-    if (elegivel && confirmado) {
-      acao = `<div class="confirmacao-area"><div class="confirmado-msg"><span class="confirmado-check">✓</span><span class="confirmado-txt">Confirmado em ${r.confirmacao}</span></div></div>`;
-    } else if (elegivel) {
-      acao = `<div class="confirmacao-area"><button class="btn-confirmar" onclick="abrirModal(${i})">Confirmar Comissão</button></div>`;
-    }
-
-    return `<div class="mes-card ${cardClass}">
-      <div class="mes-header">
-        <div><div class="mes-titulo">${mesNome} ${r.ano}</div><div class="mes-nivel">${r.nivel || ''}</div></div>
-        <span class="badge-elegivel ${elegivel ? 'sim' : 'nao'}">${elegivel ? 'Elegível' : 'Não elegível'}</span>
-      </div>
-      ${metricas}${comissaoHtml}${acao}
-    </div>`;
-  }).join('');
-}
-
-function abrirModal(idx) {
-  pendenteMesIdx = idx;
-  const r = dadosComissao[idx];
-  const mesNome = NOMES_MESES[parseInt(r.mes)] || r.mes;
-  document.getElementById('modalValor').textContent = fmtMoneyC(r.comissao);
-  document.getElementById('modalMes').textContent   = `referente a ${mesNome} / ${r.ano}`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
-
-function fecharModal() {
-  document.getElementById('modalOverlay').classList.add('hidden');
-  pendenteMesIdx = null;
-}
-
-async function confirmarDefinitivo() {
-  if (pendenteMesIdx === null) return;
-  const r = dadosComissao[pendenteMesIdx];
-  document.getElementById('btnOk').disabled = true;
-
-  // Salva confirmação no localStorage
-  const agora = new Date();
-  const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-  const chave = `confirmacao_${r.ano}_${r.mes}`;
-  localStorage.setItem(chave, dataHora);
-  dadosComissao[pendenteMesIdx].confirmacao = dataHora;
-
-  // Envia e-mail de confirmação
-  await fetch('/api/comissao/confirmar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ano: r.ano, mes: r.mes, valor: r.comissao })
-  });
-
-  fecharModal();
-  document.getElementById('successOverlay').classList.remove('hidden');
-  setTimeout(() => {
-    document.getElementById('successOverlay').classList.add('hidden');
-    renderComissao();
-  }, 3500);
-
-  document.getElementById('btnOk').disabled = false;
-}
-
-document.getElementById('modalOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modalOverlay')) fecharModal();
-});
-
-// ── CLOSER ──────────────────────────────────────────────────
-
-function kpiGridCloser() {
-  return `
-    <div class="kpi-card">
-      <div class="kpi-label">Reuniões Realizadas</div>
-      <div class="kpi-value" id="kpiRealizadas">--</div>
-      <div class="kpi-sub">mês atual</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Reuniões Validadas</div>
-      <div class="kpi-value green" id="kpiValidadas">--</div>
-      <div class="kpi-sub" id="kpiValidadasSub">--</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">% Validadas</div>
-      <div class="kpi-value yellow" id="kpiPctValidadas">--</div>
-      <div class="kpi-sub">das realizadas</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">R$ Ganhos</div>
-      <div class="kpi-value green" id="kpiValorBruto">--</div>
-      <div class="kpi-sub">valor bruto</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">R$ Ganhos Multiplicador</div>
-      <div class="kpi-value green" id="kpiValorMulti">--</div>
-      <div class="kpi-sub">com multiplicador</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">% Meta Financeira</div>
-      <div class="kpi-value yellow" id="kpiPctFin">--</div>
-      <div class="kpi-sub" id="kpiPctFinSub">--</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Volume de Referidos</div>
-      <div class="kpi-value" id="kpiReferidos">--</div>
-      <div class="kpi-sub">mês atual</div>
-    </div>`;
-}
-
-function chartsRowCloser() {
-  return `
-    <div class="chart-card">
-      <div class="chart-title">Reuniões Realizadas</div>
-      <div class="chart-canvas-wrap"><canvas id="chartRealizadas"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Valores Ganhos (R$)</div>
-      <div class="chart-canvas-wrap"><canvas id="chartValores"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Volume de Referidos</div>
-      <div class="chart-canvas-wrap"><canvas id="chartReferidos"></canvas></div>
-    </div>`;
-}
-
-function tablesRowCloser() {
-  return `
-    <div class="table-card">
-      <div class="table-title">Reuniões Realizadas</div>
-      <table class="data-table">
-        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Hora</th></tr></thead>
-        <tbody id="tblRealizadas"></tbody>
-      </table>
-    </div>
-    <div class="table-card">
-      <div class="table-title">Ganhos</div>
-      <table class="data-table">
-        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
-        <tbody id="tblGanhos"></tbody>
-      </table>
-    </div>
-    <div class="table-card">
-      <div class="table-title">Referidos</div>
-      <table class="data-table">
-        <thead><tr><th>Deal</th><th>Nome</th><th>Data</th><th>Bruto</th><th>×Multi</th></tr></thead>
-        <tbody id="tblReferidos"></tbody>
-      </table>
-    </div>`;
-}
-
-async function fetchCloser() {
-  try {
-    const resp = await fetch(getApiUrl(API_CLOSER_BASE));
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const d = await resp.json();
-    if (d.erro) throw new Error(d.erro);
-    renderCloser(d);
-  } catch(err) {
-    document.querySelector('.loading-txt').textContent = 'Erro: ' + err.message;
-    console.error(err);
-  }
-}
-
-function renderCloser(d) {
-  const iniciais = d.colaborador.nome.split(' ').map(p=>p[0]).slice(0,2).join('');
-  setText('avatarInitials', iniciais);
-  setText('userName', d.colaborador.nome);
-  setText('userCargo', `${d.colaborador.cargo} · ${d.colaborador.time}`);
-  setText('metaFin', fmtMoney(d.metas.meta_fin));
-
-  atualizarGauge(d.comissao.atingimento);
-
-  const badge = document.getElementById('comissaoBadge');
-  if (badge) badge.textContent = d.comissao.comissionando ? '✓ Comissionando' : '✗ Fora da comissão';
-  if (badge) badge.className   = 'comissao-badge ' + (d.comissao.comissionando ? 'on' : 'off');
-  setText('comAtingimento', fmtPct(d.comissao.atingimento));
-  setText('comAcelerador', 'x' + d.comissao.acelerador);
-  setText('comEstimada', fmtMoney(d.comissao.estimada));
-
-  setText('kpiRealizadas', d.kpis.reunioesRealizadas);
-  setText('kpiValidadas', d.kpis.reunioesValidadas);
-  setText('kpiValidadasSub', `de ${d.kpis.reunioesRealizadas} realizadas`);
-  setText('kpiPctValidadas', fmtPct(d.kpis.pctValidadas));
-  setText('kpiValorBruto', fmtMoney(d.kpis.valorBruto));
-  setText('kpiValorMulti', fmtMoney(d.kpis.valorMultiplicador));
-  setText('kpiPctFin', fmtPct(d.kpis.pctMetaFin));
-  setText('kpiPctFinSub', `meta: ${fmtMoney(d.metas.meta_fin)}`);
-  setText('kpiReferidos', d.kpis.volumeReferidos);
-
-  // Gráficos
-  const reLabels = d.graficos.serieRealizadas.map(x => fmtLabel(x.data));
-  const reData   = d.graficos.serieRealizadas.map(x => x.qtd);
-  const vaLabels = d.graficos.serieValores.map(x => fmtLabel(x.data));
-  const vaData   = d.graficos.serieValores.map(x => x.valor);
-  const rfLabels = d.graficos.serieReferidos.map(x => fmtLabel(x.data));
-  const rfData   = d.graficos.serieReferidos.map(x => x.qtd);
-
-  if (chartRe) chartRe.destroy();
-  if (chartVa) chartVa.destroy();
-  if (chartAg) chartAg.destroy();
-
-  chartRe = buildChart('chartRealizadas', 'line', reLabels, reData, '#2adf8a');
-  chartVa = buildChart('chartValores',    'bar',  vaLabels, vaData, '#f5c400', true);
-  chartAg = buildChart('chartReferidos',  'bar',  rfLabels, rfData, '#f5c400');
-
-  // Tabelas
-  renderTabela('tblRealizadas', d.tabelas.reunioesRealizadas, r =>
-    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data)}</td><td class="mono">${r.hora||'--'}</td></tr>`
-  );
-  renderTabela('tblGanhos', d.tabelas.ganhos, r =>
-    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_ganho)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
-  );
-  renderTabela('tblReferidos', d.tabelas.referidos, r =>
-    `<tr><td>${dealLink(r.deal_id)}</td><td>${r.nome||'--'}</td><td class="mono">${fmtDate(r.data_criacao)}</td><td class="money">${fmtMoney(r.valor_bruto)}</td><td class="money">${fmtMoney(r.valor_multi)}</td></tr>`
-  );
-
-  setText('footerDate', `Atualizado em ${d.atualizadoEm}`);
-  carregarFoto(d.colaborador.foto);
-
-  const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const agora = new Date();
-  const mesSel = parseInt(document.getElementById('selMes')?.value || agora.getMonth()+1);
-  const anoSel = parseInt(document.getElementById('selAno')?.value || agora.getFullYear());
-  document.getElementById('mesAtual').textContent = meses[mesSel] + ' / ' + anoSel;
-
-  document.getElementById('loading').style.display   = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-}
-
-</script>
-</body>
-</html>
+# ── COMISSÃO ────────────────────────────────────────────────
+def buscar_comissoes(nome):
+    df = ler_sheet(URL_COMISSOES)
+    df.columns = [c.strip() for c in df.columns]
+    registros = []
+    for _, row in df.iterrows():
+        if norm(str(row.get("Nome", ""))) != norm(nome):
+            continue
+        registros.append({
+            "ano":            str(row.get("Ano", "")),
+            "mes":            str(row.get("Mês", row.get("Mes", ""))),
+            "nivel":          str(row.get("Nível", row.get("Nivel", ""))),
+            "vol_reuniao":    str(row.get("Vol. Reunião", row.get("Vol. Reuniao", ""))),
+            "valor_financeiro": str(row.get("Valor Financeiro", "")),
+            "pct_reuniao":    str(row.get("% Reunião", row.get("% Reuniao", ""))),
+            "pct_financeiro": str(row.get("% Financeiro", "")),
+            "pct_meta_final": str(row.get("% Meta Final", "")),
+            "elegivel":       str(row.get("Elegível?", row.get("Elegivel?", ""))),
+            "acelerador":     str(row.get("Acelerador OTE", "")),
+            "variavel_ote":   str(row.get("Variável OTE", row.get("Variavel OTE", ""))),
+            "rampagem":       str(row.get("Rampagem (OTE)", "")),
+            "comissao":       str(row.get("Comissão", row.get("Comissao", ""))),
+            "confirmacao":    str(row.get("Confirmação", row.get("Confirmacao", ""))).strip(),
+        })
+    # Ordem: mais recente primeiro
+    registros.sort(key=lambda r: (r["ano"], r["mes"].zfill(2)), reverse=True)
+    return registros
+
+def gravar_confirmacao(nome, ano, mes):
+    import gspread
+    # Fallback: usar requests para atualizar via Sheets API não disponível sem OAuth
+    # Usamos uma abordagem alternativa: webhook para um Google Apps Script
+    # Por ora, retorna erro indicando que precisa configurar o Apps Script
+    return False, "Configure o endpoint de gravação"
+
+
+@app.route("/api/comissao/confirmar", methods=["POST"])
+def api_confirmar_comissao():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    body = request.get_json()
+    ano   = str(body.get("ano", ""))
+    mes   = str(body.get("mes", ""))
+    valor = str(body.get("valor", ""))
+    agora = (datetime.now() - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
+    enviar_notificacao(nome, mes, ano, valor, agora)
+    return jsonify({"ok": True})
+
+@app.route("/comissao")
+def comissao():
+    if "nome" not in session:
+        return redirect("/login")
+    return send_from_directory(".", "comissao.html")
+
+@app.route("/api/comissao")
+def api_comissao():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    try:
+        registros = buscar_comissoes(nome)
+        return jsonify({"nome": nome, "registros": registros})
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
+
+
+
+
+def enviar_notificacao(nome, mes, ano, valor, data_hora):
+    """Envia notificação via Power Automate webhook."""
+    try:
+        webhook_url = os.getenv("POWERAUTOMATE_WEBHOOK", "")
+        if not webhook_url:
+            print("POWERAUTOMATE_WEBHOOK não configurada")
+            return False
+
+        nomes_meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+        mes_nome = nomes_meses[int(mes)] if str(mes).isdigit() else mes
+
+        payload = {
+            "Nome":      nome,
+            "Periodo":   f"{mes_nome} / {ano}",
+            "Valor":     f"R$ {valor}",
+            "DataHora":  data_hora
+        }
+
+        r = req.post(webhook_url, json=payload, timeout=15)
+        print(f"Power Automate status: {r.status_code}")
+        return r.status_code in (200, 201, 202)
+    except Exception as e:
+        import traceback
+        print(f"ERRO WEBHOOK: {e}")
+        traceback.print_exc()
+        return False
+
+# ── ROTAS ────────────────────────────────────────────────────
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        usuario = request.form.get("usuario", "").strip()
+        senha   = request.form.get("senha", "").strip()
+        nome    = buscar_usuario(usuario, senha)
+        if nome:
+            session["nome"] = nome
+            return redirect("/dashboard")
+        return send_from_directory(".", "login.html"), 401
+    return send_from_directory(".", "login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
+@app.route("/dashboard")
+def dashboard():
+    if "nome" not in session:
+        return redirect("/login")
+    return send_from_directory(".", "dashboard.html")
+
+@app.route("/api/sdr")
+def api_sdr():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    try:
+        mes = request.args.get("mes", type=int) or date.today().month
+        ano = request.args.get("ano", type=int) or date.today().year
+        if ano < 2026 or (ano == 2026 and mes < 5):
+            mes, ano = 5, 2026
+
+        colaborador = buscar_colaborador(nome, mes, ano)
+        if not colaborador:
+            return jsonify({"erro": f"'{nome}' nao encontrado ou inativo para {mes}/{ano}"}), 404
+
+        metas = buscar_metas(nome, mes, ano)
+        if not metas:
+            return jsonify({"erro": f"Metas de '{nome}' nao encontradas para {mes}/{ano}"}), 404
+
+        ote = buscar_ote(colaborador["cargo"])
+        if not ote:
+            return jsonify({"erro": f"OTE nao encontrado para cargo '{colaborador['cargo']}'"}), 404
+
+        users           = buscar_users()
+        user_id         = encontrar_user_id(users, nome)
+        if not user_id:
+            return jsonify({"erro": f"Usuario '{nome}' nao encontrado no Pipedrive"}), 404
+
+        deals           = buscar_deals(mes, ano)
+        activities      = buscar_activities(mes, ano)
+        qualificador_id = buscar_qualificador_id(nome)
+
+        resultado = calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities)
+        return jsonify(limpar_nans(resultado))
+
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
+
+@app.route("/")
+def index():
+    return redirect("/login")
+
+@app.route("/debug/erro")
+def debug_erro():
+    if "nome" not in session:
+        return jsonify({"erro": "não autenticado"}), 401
+    try:
+        nome = session["nome"]
+        colaborador = buscar_colaborador(nome)
+        metas = buscar_metas(nome)
+        ote = buscar_ote(colaborador["cargo"]) if colaborador else None
+        users = buscar_users()
+        user_id = encontrar_user_id(users, nome)
+        deals = buscar_deals()
+        activities = buscar_activities()
+        deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+        return jsonify({
+            "colaborador": colaborador,
+            "metas": metas,
+            "ote": ote,
+            "user_id": user_id,
+            "total_deals": len(deals),
+            "total_activities": len(activities),
+            "total_deals_rv": len(deal_ids_validos),
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()})
+
+
+@app.route("/api/closer")
+def api_closer():
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    try:
+        mes = request.args.get("mes", type=int) or date.today().month
+        ano = request.args.get("ano", type=int) or date.today().year
+        if ano < 2026 or (ano == 2026 and mes < 5):
+            mes, ano = 5, 2026
+
+        colaborador = buscar_colaborador(nome, mes, ano)
+        if not colaborador:
+            return jsonify({"erro": f"'{nome}' nao encontrado para {mes}/{ano}"}), 404
+
+        metas = buscar_metas(nome, mes, ano)
+        if not metas:
+            return jsonify({"erro": f"Metas nao encontradas para {mes}/{ano}"}), 404
+
+        ote = buscar_ote(colaborador["cargo"])
+        if not ote:
+            return jsonify({"erro": f"OTE nao encontrado"}), 404
+
+        users   = buscar_users()
+        user_id = encontrar_user_id(users, nome)
+        if not user_id:
+            return jsonify({"erro": f"Usuario nao encontrado no Pipedrive"}), 404
+
+        deals      = buscar_deals(mes, ano)
+        activities = buscar_activities(mes, ano)
+        referidos  = buscar_referidos()
+
+        resultado = calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos)
+        return jsonify(limpar_nans(resultado))
+
+    except Exception as e:
+        import traceback
+        return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
+
+@app.route("/api/tipo")
+def api_tipo():
+    """Retorna se o usuário logado é SDR ou Closer."""
+    if "nome" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+    nome = session["nome"]
+    colaborador = buscar_colaborador(nome)
+    if not colaborador:
+        return jsonify({"tipo": "desconhecido"})
+    tipo = "closer" if is_closer(colaborador["cargo"]) else "sdr"
+    return jsonify({"tipo": tipo, "cargo": colaborador["cargo"]})
+
+# ── MAIN ─────────────────────────────────────────────────────
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5050))
+    print(f"\n Board Academy — http://localhost:{port}")
+    app.run(host="0.0.0.0", port=port, debug=False)
