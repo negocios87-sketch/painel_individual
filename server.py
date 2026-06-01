@@ -187,10 +187,12 @@ def buscar_colaborador(nome):
 
     return melhor
 
-def buscar_metas(nome):
+def buscar_metas(nome, mes=None, ano=None):
     df = ler_sheet(URL_METAS)
     df.columns = [c.strip() for c in df.columns]
     hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
 
     def limpar_numero(val):
         try:
@@ -200,11 +202,11 @@ def buscar_metas(nome):
 
     for _, row in df.iterrows():
         try:
-            ano = int(float(str(row.get("Ano", 0))))
-            mes = int(float(str(row.get("Mes", row.get("Mês", 0)))))
+            ano_row = int(float(str(row.get("Ano", 0))))
+            mes_row = int(float(str(row.get("Mes", row.get("Mês", 0)))))
         except:
             continue
-        if norm(row.get("Nome")) == norm(nome) and ano == hoje.year and mes == hoje.month:
+        if norm(row.get("Nome")) == norm(nome) and ano_row == ano and mes_row == mes:
             ramp_str = str(row.get("% de Rampagem", "1") or "1").replace("%","").strip()
             ramp_val = float(ramp_str)
             ramp = ramp_val / 100 if ramp_val > 1 else ramp_val
@@ -257,8 +259,12 @@ def encontrar_user_id(users, nome):
             return uid
     return None
 
-def buscar_deals():
+def buscar_deals(mes=None, ano=None):
     todos, start = [], 0
+    hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
+    mes_str = f"{ano}-{mes:02d}"
     while True:
         resp = req.get(f"{BASE_V1}/deals", params={
             "filter_id": FILTER_DEALS,
@@ -269,15 +275,23 @@ def buscar_deals():
         resp.raise_for_status()
         data = resp.json()
         lote = data.get("data") or []
-        todos.extend(lote)
+        # Filtra pelo mês selecionado
+        for d in lote:
+            wt = str(d.get("won_time", ""))[:7]
+            if wt == mes_str:
+                todos.append(d)
         mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
         if not mais or not lote:
             break
         start += 500
     return todos
 
-def buscar_activities():
+def buscar_activities(mes=None, ano=None):
     todos, cursor = [], None
+    hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
+    mes_str = f"{ano}-{mes:02d}"
     while True:
         params = {"filter_id": FILTER_ACTIVITIES, "limit": 200}
         if cursor:
@@ -289,13 +303,15 @@ def buscar_activities():
         resp.raise_for_status()
         data   = resp.json()
         lote   = data.get("data") or []
-        todos.extend(lote)
+        for a in lote:
+            if str(a.get("due_date", ""))[:7] == mes_str:
+                todos.append(a)
         cursor = data.get("additional_data", {}).get("next_cursor")
         if not cursor or not lote:
             break
     return todos
 
-def buscar_deals_rv():
+def buscar_deals_rv(mes=None, ano=None):
     """Busca deals com Reunião Validada? != Não e != No Show."""
     deal_ids_validos = set()
     mapa_owner = {}
@@ -341,13 +357,10 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     valor_bruto = sum(float(d.get("value") or 0) for d in deals_ganhos)
     valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
 
-    hoje      = date.today()
-    mes_atual = hoje.strftime("%Y-%m")
-
+    # mes_atual já vem filtrado das activities
     acts_sdr = [
         a for a in activities
         if str(a.get("owner_id")) == str(user_id)
-        and str(a.get("due_date", ""))[:7] == mes_atual
     ]
 
     # Busca deals válidos (Reunião Validada? != Não e != No Show)
@@ -776,9 +789,14 @@ def api_sdr():
         if not colaborador:
             return jsonify({"erro": f"'{nome}' nao encontrado ou inativo"}), 404
 
-        metas = buscar_metas(nome)
+        mes = request.args.get("mes", type=int) or date.today().month
+        ano = request.args.get("ano", type=int) or date.today().year
+        if ano < 2026 or (ano == 2026 and mes < 5):
+            mes, ano = 5, 2026
+
+        metas = buscar_metas(nome, mes, ano)
         if not metas:
-            return jsonify({"erro": f"Metas de '{nome}' nao encontradas para o mes atual"}), 404
+            return jsonify({"erro": f"Metas de '{nome}' nao encontradas para {mes}/{ano}"}), 404
 
         ote = buscar_ote(colaborador["cargo"])
         if not ote:
@@ -789,8 +807,8 @@ def api_sdr():
         if not user_id:
             return jsonify({"erro": f"Usuario '{nome}' nao encontrado no Pipedrive"}), 404
 
-        deals           = buscar_deals()
-        activities      = buscar_activities()
+        deals           = buscar_deals(mes, ano)
+        activities      = buscar_activities(mes, ano)
         qualificador_id = buscar_qualificador_id(nome)
 
         resultado = calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities)
@@ -855,8 +873,13 @@ def api_closer():
         if not user_id:
             return jsonify({"erro": f"Usuario nao encontrado no Pipedrive"}), 404
 
-        deals      = buscar_deals()
-        activities = buscar_activities()
+        mes = request.args.get("mes", type=int) or date.today().month
+        ano = request.args.get("ano", type=int) or date.today().year
+        if ano < 2026 or (ano == 2026 and mes < 5):
+            mes, ano = 5, 2026
+
+        deals      = buscar_deals(mes, ano)
+        activities = buscar_activities(mes, ano)
         referidos  = buscar_referidos()
 
         resultado = calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos)
