@@ -874,6 +874,11 @@ function getApiUrl(base) {
 }
 
 function aplicarFiltro() {
+  // Mostra loading
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loading').style.display   = 'flex';
+  document.querySelector('.loading-txt').textContent = 'Buscando dados...';
+
   if (session_tipo === 'closer') {
     fetchCloser();
   } else {
