@@ -192,7 +192,8 @@ def buscar_metas(nome, mes=None, ano=None):
 
     def limpar_numero(val):
         try:
-            return float(str(val or "0").strip())
+            s = str(val or "0").strip().replace("R$","").replace(" ","").replace(".","").replace(",",".")
+            return float(s)
         except:
             return 0.0
 
