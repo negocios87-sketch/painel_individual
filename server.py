@@ -886,6 +886,25 @@ def api_closer():
         import traceback
         return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
 
+@app.route("/debug/user")
+def debug_user():
+    if "nome" not in session:
+        return jsonify({"erro": "não autenticado"}), 401
+    nome = session["nome"]
+    hoje = date.today()
+    mes, ano = hoje.month, hoje.year
+    colaborador = buscar_colaborador(nome, mes, ano)
+    metas = buscar_metas(nome, mes, ano)
+    ote = buscar_ote(colaborador["cargo"]) if colaborador else None
+    return jsonify({
+        "nome": nome,
+        "mes": mes,
+        "ano": ano,
+        "colaborador": colaborador,
+        "metas": metas,
+        "ote": ote,
+    })
+
 @app.route("/api/tipo")
 def api_tipo():
     """Retorna se o usuário logado é SDR ou Closer."""
