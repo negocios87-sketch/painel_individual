@@ -90,6 +90,14 @@ const fmtMoneyC = v => {
 };
 const fmtPctC = v => v && v !== 'nan' ? v : '--';
 
+const fmtMoneyFull = v => {
+  if (!v || v === 'nan') return 'R$ 0,00';
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0,00';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+
 async function carregarComissao() {
   comissaoCarregada = true;
   try {
@@ -125,7 +133,7 @@ function renderComissao() {
       ? `<th style="color:var(--yellow)">Comissão</th>`
       : `<th style="color:var(--red)">Comissão</th>`;
     const comissaoVal = elegivel
-      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyFull(r.comissao)}</td>`
       : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
 
     const metricas = `
@@ -309,6 +317,14 @@ const fmtMoneyC = v => {
 };
 const fmtPctC = v => v && v !== 'nan' ? v : '--';
 
+const fmtMoneyFull = v => {
+  if (!v || v === 'nan') return 'R$ 0,00';
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0,00';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+
 async function carregarComissao() {
   comissaoCarregada = true;
   try {
@@ -344,7 +360,7 @@ function renderComissao() {
       ? `<th style="color:var(--yellow)">Comissão</th>`
       : `<th style="color:var(--red)">Comissão</th>`;
     const comissaoVal = elegivel
-      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyFull(r.comissao)}</td>`
       : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
 
     const metricas = `
@@ -1190,6 +1206,14 @@ const fmtMoneyC = v => {
 };
 const fmtPctC = v => v && v !== 'nan' ? v : '--';
 
+const fmtMoneyFull = v => {
+  if (!v || v === 'nan') return 'R$ 0,00';
+  const s = String(v).replace(/R\$\s*/,'').replace(/\./g,'').replace(',','.').trim();
+  const n = Number(s);
+  if (isNaN(n) || n === 0) return 'R$ 0,00';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+
 async function carregarComissao() {
   comissaoCarregada = true;
   try {
@@ -1225,7 +1249,7 @@ function renderComissao() {
       ? `<th style="color:var(--yellow)">Comissão</th>`
       : `<th style="color:var(--red)">Comissão</th>`;
     const comissaoVal = elegivel
-      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyC(r.comissao)}</td>`
+      ? `<td style="color:var(--yellow);font-weight:700;border-left:1px solid #333;padding-left:16px;">${fmtMoneyFull(r.comissao)}</td>`
       : `<td style="color:var(--red);font-size:11px;border-left:1px solid #333;padding-left:16px;">Abaixo do mínimo</td>`;
 
     const metricas = `
