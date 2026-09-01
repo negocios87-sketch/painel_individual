@@ -274,7 +274,15 @@ def buscar_deals(mes=None, ano=None):
         lote = data.get("data") or []
         # Filtra pelo mês selecionado
         for d in lote:
+            won_time = d.get("won_time")
+        
+            if won_time:
+                dt = datetime.fromisoformat(won_time.replace("Z", "+00:00"))
+                dt = dt - timedelta(hours=3)
+                d["won_time"] = dt.strftime("%Y-%m-%d %H:%M:%S")
+        
             wt = str(d.get("won_time", ""))[:7]
+        
             if wt == mes_str:
                 todos.append(d)
         mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
