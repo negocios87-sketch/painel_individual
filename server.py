@@ -528,6 +528,11 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     # Mapa deal_id -> "Reunião Validada?"
     deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
 
+    # Mapa deal_id -> valor bruto do campo RV (para checar Sim estrito no closer)
+    mapa_rv_valor = {}
+    for d in deals:
+        mapa_rv_valor[d["id"]] = cf(d, CF_REUNIAO_VALID)
+
     # Achar user_id do Matheus Paz
     users_pipe = buscar_users()
     matheus_id = str(next((uid for uid, uname in users_pipe.items() if norm(uname) == norm("Matheus Paz")), ""))
@@ -545,26 +550,26 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
         and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
     ]
 
-    # Lógica igual ao monitor:
-    # 1. Concluída (done)
-    # 2. Se tem deal_id, ele PRECISA estar no mapa (deals_rv) — senão não conta
-    # 3. Dono do deal ≠ responsável da atividade (já filtrado em acts_closer)
-    def reuniao_valida_closer(a):
-        if not (a.get("done") == True or a.get("status") == "done"):
+    # Logica igual ao monitor:
+    # Realizadas = type=meeting + done + dono do deal eh o closer (filtrado em acts_closer)
+    # Validadas  = realizadas + campo "Reuniao Validada?" == "Sim" ESTRITO (em branco NAO conta)
+
+    def campo_e_sim(deal_id):
+        if not deal_id:
             return False
-        deal_id = a.get("deal_id")
-        if deal_id:
-            if deal_id not in deal_ids_validos:
-                return False
-        return True
+        rv_val = mapa_rv_valor.get(deal_id)
+        if rv_val is None or str(rv_val).strip() == "":
+            return False
+        return str(rv_val) == RV_SIM or norm(str(rv_val)) == "sim"
 
-    reu_realizadas = [a for a in acts_closer if reuniao_valida_closer(a)]
-
-    # Validadas = subconjunto das realizadas onde deal está explicitamente no mapa RV
-    reu_validadas = [
-        a for a in reu_realizadas
-        if a.get("deal_id") and a.get("deal_id") in deal_ids_validos
+    reu_realizadas = [
+        a for a in acts_closer
+        if a.get("type") == "meeting"
+        and (a.get("done") == True or a.get("status") == "done")
+        and a.get("deal_id")
     ]
+
+    reu_validadas = [a for a in reu_realizadas if campo_e_sim(a.get("deal_id"))]
 
     qtd_realizadas = len(reu_realizadas)
     qtd_validadas  = len(reu_validadas)
