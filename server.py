@@ -538,56 +538,17 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     TIMES_INSIDE_SALES = ["orion", "latam"]
     is_inside_sales = norm(colaborador.get("time", "")) in TIMES_INSIDE_SALES
 
-    # Busca cargos dos usuarios para identificar SDRs
-    cargo_por_user_id = {}
-    df_colab = ler_sheet(URL_COLAB)
-    df_colab.columns = [c.strip() for c in df_colab.columns]
-    for _, row in df_colab.iterrows():
-        email = str(row.get("Email", "")).strip().lower()
-        cargo = str(row.get("Cargo", "")).strip().lower()
-        nome_colab = norm(str(row.get("Nome", "")))
-        cargo_por_user_id[nome_colab] = cargo
-
-    users_map = buscar_users()  # {user_id: nome}
-
-    def is_sdr_owner(owner_id):
-        nome = norm(users_map.get(owner_id, ""))
-        cargo = cargo_por_user_id.get(nome, "")
-        return "sdr" in cargo
-
-    # Todas as activities do mês onde o closer é owner do DEAL
-    acts_do_deal_closer = [
+    # Igual ao monitor: activities onde o CLOSER é o owner_id (responsável)
+    # type=meeting + done + deal_id obrigatório + excluir Matheus
+    acts_closer = [
         a for a in activities
         if str(a.get("due_date", ""))[:7] == mes_atual
-        and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
+        and str(a.get("owner_id", "")) == str(user_id)
         and a.get("type") == "meeting"
         and (a.get("done") == True or a.get("status") == "done")
         and a.get("deal_id")
         and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
     ]
-
-    # Por deal: verifica se há activity de SDR
-    deals_com_sdr = set(
-        a.get("deal_id") for a in acts_do_deal_closer
-        if is_sdr_owner(a.get("owner_id"))
-    )
-
-    # Regra: se o deal tem activity de SDR, conta só a do SDR
-    #        se não tem SDR, conta a do closer (Inside Sales ou não)
-    def reuniao_conta(a):
-        deal_id   = a.get("deal_id")
-        owner_id  = a.get("owner_id")
-        is_sdr    = is_sdr_owner(owner_id)
-        is_closer_proprio = str(owner_id) == str(user_id)
-
-        if deal_id in deals_com_sdr:
-            # Tem SDR no deal — só conta a activity do SDR
-            return is_sdr
-        else:
-            # Sem SDR — conta qualquer um que não seja Matheus
-            return True
-
-    acts_closer = [a for a in acts_do_deal_closer if reuniao_conta(a)]
 
     def campo_e_sim(deal_id):
         if not deal_id:
@@ -940,34 +901,6 @@ def api_tipo():
         return jsonify({"tipo": "desconhecido"})
     tipo = "closer" if is_closer(colaborador["cargo"]) else "sdr"
     return jsonify({"tipo": tipo, "cargo": colaborador["cargo"]})
-
-@app.route("/debug/reunioes_closer")
-def debug_reunioes_closer():
-    if "nome" not in session:
-        return jsonify({"erro": "não autenticado"}), 401
-    nome = session["nome"]
-    users = buscar_users()
-    user_id = encontrar_user_id(users, nome)
-    activities = buscar_activities()
-    deal_ids_validos, mapa_deal_owner, mapa_rv_valor = buscar_deals_rv()
-    hoje = date.today()
-    mes_atual = hoje.strftime("%Y-%m")
-    matheus_id = str(next((uid for uid, uname in users.items() if norm(uname) == norm("Matheus Paz")), ""))
-
-    candidatas = [
-        a for a in activities
-        if str(a.get("due_date", ""))[:7] == mes_atual
-        and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
-        and a.get("type") == "meeting"
-        and (a.get("done") == True or a.get("status") == "done")
-        and a.get("deal_id")
-        and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
-    ]
-
-    return jsonify({
-        "total": len(candidatas),
-        "por_deal": [{"deal_id": a.get("deal_id"), "owner_id": a.get("owner_id"), "rv": mapa_rv_valor.get(a.get("deal_id")), "due_date": a.get("due_date")} for a in candidatas]
-    })
 
 # ── MAIN ─────────────────────────────────────────────────────
 if __name__ == "__main__":
