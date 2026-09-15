@@ -274,15 +274,7 @@ def buscar_deals(mes=None, ano=None):
         lote = data.get("data") or []
         # Filtra pelo mês selecionado
         for d in lote:
-            won_time = d.get("won_time")
-        
-            if won_time:
-                dt = datetime.fromisoformat(won_time.replace("Z", "+00:00"))
-                dt = dt - timedelta(hours=3)
-                d["won_time"] = dt.strftime("%Y-%m-%d %H:%M:%S")
-        
             wt = str(d.get("won_time", ""))[:7]
-        
             if wt == mes_str:
                 todos.append(d)
         mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
@@ -553,13 +545,22 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
         and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
     ]
 
-    # Realizadas = done
-    reu_realizadas = [
-        a for a in acts_closer
-        if a.get("done") == True or a.get("status") == "done"
-    ]
+    # Lógica igual ao monitor:
+    # 1. Concluída (done)
+    # 2. Se tem deal_id, ele PRECISA estar no mapa (deals_rv) — senão não conta
+    # 3. Dono do deal ≠ responsável da atividade (já filtrado em acts_closer)
+    def reuniao_valida_closer(a):
+        if not (a.get("done") == True or a.get("status") == "done"):
+            return False
+        deal_id = a.get("deal_id")
+        if deal_id:
+            if deal_id not in deal_ids_validos:
+                return False
+        return True
 
-    # Validadas = realizadas + Reunião Validada? = Sim
+    reu_realizadas = [a for a in acts_closer if reuniao_valida_closer(a)]
+
+    # Validadas = subconjunto das realizadas onde deal está explicitamente no mapa RV
     reu_validadas = [
         a for a in reu_realizadas
         if a.get("deal_id") and a.get("deal_id") in deal_ids_validos
@@ -893,25 +894,6 @@ def api_closer():
     except Exception as e:
         import traceback
         return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
-
-@app.route("/debug/user")
-def debug_user():
-    if "nome" not in session:
-        return jsonify({"erro": "não autenticado"}), 401
-    nome = session["nome"]
-    hoje = date.today()
-    mes, ano = hoje.month, hoje.year
-    colaborador = buscar_colaborador(nome, mes, ano)
-    metas = buscar_metas(nome, mes, ano)
-    ote = buscar_ote(colaborador["cargo"]) if colaborador else None
-    return jsonify({
-        "nome": nome,
-        "mes": mes,
-        "ano": ano,
-        "colaborador": colaborador,
-        "metas": metas,
-        "ote": ote,
-    })
 
 @app.route("/api/tipo")
 def api_tipo():
