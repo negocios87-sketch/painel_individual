@@ -312,6 +312,7 @@ def buscar_deals_rv(mes=None, ano=None):
     """Busca deals com Reunião Validada? != Não e != No Show."""
     deal_ids_validos = set()
     mapa_owner = {}
+    mapa_rv_valor = {}
     start = 0
     while True:
         resp = req.get(f"{BASE_V1}/deals", params={
@@ -329,11 +330,12 @@ def buscar_deals_rv(mes=None, ano=None):
             uid = d.get("user_id")
             deal_ids_validos.add(did)
             mapa_owner[did] = uid.get("id") if isinstance(uid, dict) else uid
+            mapa_rv_valor[did] = cf(d, CF_REUNIAO_VALID)
         mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
         if not mais or not lote:
             break
         start += 500
-    return deal_ids_validos, mapa_owner
+    return deal_ids_validos, mapa_owner, mapa_rv_valor
 
 def cf(deal, key):
     val = deal.get(key)
@@ -361,7 +363,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     ]
 
     # Busca deals válidos (Reunião Validada? != Não e != No Show)
-    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+    deal_ids_validos, mapa_deal_owner, mapa_rv_valor = buscar_deals_rv()
 
     # Completa mapa_owner com deals ganhos do mês
     for d in deals:
@@ -526,12 +528,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     valor_multi = sum(float(cf(d, CF_MULTIPLICADOR) or 0) for d in deals_ganhos)
 
     # Mapa deal_id -> "Reunião Validada?"
-    deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
-
-    # Mapa deal_id -> valor bruto do campo RV (para checar Sim estrito no closer)
-    mapa_rv_valor = {}
-    for d in deals:
-        mapa_rv_valor[d["id"]] = cf(d, CF_REUNIAO_VALID)
+    deal_ids_validos, mapa_deal_owner, mapa_rv_valor = buscar_deals_rv()
 
     # Achar user_id do Matheus Paz
     users_pipe = buscar_users()
@@ -541,18 +538,56 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     TIMES_INSIDE_SALES = ["orion", "latam"]
     is_inside_sales = norm(colaborador.get("time", "")) in TIMES_INSIDE_SALES
 
-    # Activities do mês onde o closer é owner do DEAL (não da activity)
-    acts_closer = [
+    # Busca cargos dos usuarios para identificar SDRs
+    cargo_por_user_id = {}
+    df_colab = ler_sheet(URL_COLAB)
+    df_colab.columns = [c.strip() for c in df_colab.columns]
+    for _, row in df_colab.iterrows():
+        email = str(row.get("Email", "")).strip().lower()
+        cargo = str(row.get("Cargo", "")).strip().lower()
+        nome_colab = norm(str(row.get("Nome", "")))
+        cargo_por_user_id[nome_colab] = cargo
+
+    users_map = buscar_users()  # {user_id: nome}
+
+    def is_sdr_owner(owner_id):
+        nome = norm(users_map.get(owner_id, ""))
+        cargo = cargo_por_user_id.get(nome, "")
+        return "sdr" in cargo
+
+    # Todas as activities do mês onde o closer é owner do DEAL
+    acts_do_deal_closer = [
         a for a in activities
         if str(a.get("due_date", ""))[:7] == mes_atual
         and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
-        and (is_inside_sales or str(a.get("owner_id", "")) != str(user_id))
+        and a.get("type") == "meeting"
+        and (a.get("done") == True or a.get("status") == "done")
+        and a.get("deal_id")
         and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
     ]
 
-    # Logica igual ao monitor:
-    # Realizadas = type=meeting + done + dono do deal eh o closer (filtrado em acts_closer)
-    # Validadas  = realizadas + campo "Reuniao Validada?" == "Sim" ESTRITO (em branco NAO conta)
+    # Por deal: verifica se há activity de SDR
+    deals_com_sdr = set(
+        a.get("deal_id") for a in acts_do_deal_closer
+        if is_sdr_owner(a.get("owner_id"))
+    )
+
+    # Regra: se o deal tem activity de SDR, conta só a do SDR
+    #        se não tem SDR, conta a do closer (Inside Sales ou não)
+    def reuniao_conta(a):
+        deal_id   = a.get("deal_id")
+        owner_id  = a.get("owner_id")
+        is_sdr    = is_sdr_owner(owner_id)
+        is_closer_proprio = str(owner_id) == str(user_id)
+
+        if deal_id in deals_com_sdr:
+            # Tem SDR no deal — só conta a activity do SDR
+            return is_sdr
+        else:
+            # Sem SDR — conta qualquer um que não seja Matheus
+            return True
+
+    acts_closer = [a for a in acts_do_deal_closer if reuniao_conta(a)]
 
     def campo_e_sim(deal_id):
         if not deal_id:
@@ -562,14 +597,8 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
             return False
         return str(rv_val) == RV_SIM or norm(str(rv_val)) == "sim"
 
-    reu_realizadas = [
-        a for a in acts_closer
-        if a.get("type") == "meeting"
-        and (a.get("done") == True or a.get("status") == "done")
-        and a.get("deal_id")
-    ]
-
-    reu_validadas = [a for a in reu_realizadas if campo_e_sim(a.get("deal_id"))]
+    reu_realizadas = acts_closer
+    reu_validadas  = [a for a in reu_realizadas if campo_e_sim(a.get("deal_id"))]
 
     qtd_realizadas = len(reu_realizadas)
     qtd_validadas  = len(reu_validadas)
@@ -846,7 +875,7 @@ def debug_erro():
         user_id = encontrar_user_id(users, nome)
         deals = buscar_deals()
         activities = buscar_activities()
-        deal_ids_validos, mapa_deal_owner = buscar_deals_rv()
+        deal_ids_validos, mapa_deal_owner, mapa_rv_valor = buscar_deals_rv()
         return jsonify({
             "colaborador": colaborador,
             "metas": metas,
