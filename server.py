@@ -941,6 +941,34 @@ def api_tipo():
     tipo = "closer" if is_closer(colaborador["cargo"]) else "sdr"
     return jsonify({"tipo": tipo, "cargo": colaborador["cargo"]})
 
+@app.route("/debug/reunioes_closer")
+def debug_reunioes_closer():
+    if "nome" not in session:
+        return jsonify({"erro": "não autenticado"}), 401
+    nome = session["nome"]
+    users = buscar_users()
+    user_id = encontrar_user_id(users, nome)
+    activities = buscar_activities()
+    deal_ids_validos, mapa_deal_owner, mapa_rv_valor = buscar_deals_rv()
+    hoje = date.today()
+    mes_atual = hoje.strftime("%Y-%m")
+    matheus_id = str(next((uid for uid, uname in users.items() if norm(uname) == norm("Matheus Paz")), ""))
+
+    candidatas = [
+        a for a in activities
+        if str(a.get("due_date", ""))[:7] == mes_atual
+        and str(mapa_deal_owner.get(a.get("deal_id"), "")) == str(user_id)
+        and a.get("type") == "meeting"
+        and (a.get("done") == True or a.get("status") == "done")
+        and a.get("deal_id")
+        and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
+    ]
+
+    return jsonify({
+        "total": len(candidatas),
+        "por_deal": [{"deal_id": a.get("deal_id"), "owner_id": a.get("owner_id"), "rv": mapa_rv_valor.get(a.get("deal_id")), "due_date": a.get("due_date")} for a in candidatas]
+    })
+
 # ── MAIN ─────────────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5050))
