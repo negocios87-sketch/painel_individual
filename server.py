@@ -539,7 +539,8 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     is_inside_sales = norm(colaborador.get("time", "")) in TIMES_INSIDE_SALES
 
     # Igual ao monitor: activities onde o CLOSER é o owner_id (responsável)
-    # type=meeting + done + deal_id obrigatório + excluir Matheus
+    # type=meeting + done + deal_id obrigatório
+    # Excluir: criador da activity é Matheus Paz
     _acts_raw = [
         a for a in activities
         if str(a.get("due_date", ""))[:7] == mes_atual
@@ -547,7 +548,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
         and a.get("type") == "meeting"
         and (a.get("done") == True or a.get("status") == "done")
         and a.get("deal_id")
-        and (not matheus_id or str(a.get("owner_id", "")) != matheus_id)
+        and (not matheus_id or str(a.get("creator_user_id", "")) != matheus_id)
     ]
 
     # Deduplica por deal_id + due_date (mantém só uma por combinação)
