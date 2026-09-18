@@ -47,7 +47,7 @@ URL_USERS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1p
 
 FILTER_DEALS      = 1464384
 FILTER_ACTIVITIES = 1310451
-FILTER_DEALS_RV   = 1466157
+FILTER_DEALS_RV   = int(os.getenv("FILTER_DEALS_RV", "1431880"))
 FILTER_REFERIDOS  = 1562285
 TABELA_PRICE_URL  = "https://inspiring-marshmallow-1ba.netlify.app/"
 
@@ -59,7 +59,7 @@ RV_SIM    = "411"
 RV_NAO    = "412"
 RV_NOSHOW = "481"
 
-TIMES_ESCOPO = ["elite", "sniper", "atlantis", "mgm", "orion", "latam", "zenite"]
+TIMES_ESCOPO = ["elite", "sniper", "atlantis", "mgm", "orion", "latam", "zenite", "ascensao"]
 
 # ── HELPERS ─────────────────────────────────────────────────
 def norm(s):
@@ -105,6 +105,19 @@ def ajustar_hora(hora_str):
         return dt.strftime("%H:%M")
     except:
         return hora_str
+
+def due_br(act):
+    d = str(act.get("due_date", "") or "")[:10]
+    t = str(act.get("due_time", "") or "")[:5]
+    if not d:
+        return "", None
+    if not t:
+        return d, None
+    try:
+        dt = datetime.strptime(f"{d} {t}", "%Y-%m-%d %H:%M") - timedelta(hours=3)
+        return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M")
+    except Exception:
+        return d, t
 
 def url_foto(nome):
     base = f"{GITHUB_FOTOS}/{nome}"
@@ -301,7 +314,7 @@ def buscar_activities(mes=None, ano=None):
         data   = resp.json()
         lote   = data.get("data") or []
         for a in lote:
-            if str(a.get("due_date", ""))[:7] == mes_str:
+            if due_br(a)[0][:7] == mes_str:
                 todos.append(a)
         cursor = data.get("additional_data", {}).get("next_cursor")
         if not cursor or not lote:
@@ -420,7 +433,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     def serie_acts(lista):
         mapa = {}
         for a in lista:
-            dt = str(a.get("due_date", ""))[:10]
+            dt = due_br(a)[0]
             if dt:
                 mapa[dt] = mapa.get(dt, 0) + 1
         return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
@@ -543,8 +556,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     # Excluir: criador da activity é Matheus Paz
     _acts_raw = [
         a for a in activities
-        if str(a.get("due_date", ""))[:7] == mes_atual
-        and str(a.get("owner_id", "")) == str(user_id)
+        if str(a.get("owner_id", "")) == str(user_id)
         and a.get("type") == "meeting"
         and (a.get("done") == True or a.get("status") == "done")
         and a.get("deal_id")
@@ -599,7 +611,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     def serie_acts(lista):
         mapa = {}
         for a in lista:
-            dt = str(a.get("due_date", ""))[:10]
+            dt = due_br(a)[0]
             if dt:
                 mapa[dt] = mapa.get(dt, 0) + 1
         return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
