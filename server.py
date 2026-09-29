@@ -74,11 +74,20 @@ def arred(v):
     except:
         return 0.0
 
-def acelerador(pct):
+def gatilho_minimo(mes=None, ano=None):
+    """A partir de set/2026 o gatilho mínimo para comissionar sobe para 70%."""    hoje = date.today()
+    mes  = mes or hoje.month
+    ano  = ano or hoje.year
+    if ano > 2026 or (ano == 2026 and mes >= 9):
+        return 70.0
+    return 60.0
+
+def acelerador(pct, mes=None, ano=None):
+    gatilho = gatilho_minimo(mes, ano)
     if pct >= 120: return 1.5
     if pct >= 100: return 1.0
     if pct >= 86:  return 0.7
-    if pct >= 60:  return 0.5
+    if pct >= gatilho: return 0.5
     return 0.0
 
 def dias_uteis_passados():
@@ -359,7 +368,7 @@ def cf(deal, key):
     return val
 
 # ── CÁLCULO ──────────────────────────────────────────────────
-def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities):
+def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities, mes=None, ano=None):
 
     deals_ganhos = [
         d for d in deals
@@ -417,7 +426,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     pct_fin = (valor_multi / metas["meta_fin"])    if metas["meta_fin"] > 0 else 0
     ating   = (pct_reu * 0.7 + pct_fin * 0.3) * 100
 
-    acel     = acelerador(ating)
+    acel     = acelerador(ating, mes, ano)
     comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
 
     dp = dias_uteis_passados()
@@ -427,7 +436,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     pct_proj_fin  = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
     pct_proj_reu  = (proj_reu / metas["meta_reu"] * 100)  if metas["meta_reu"] > 0 else 0
     ating_proj    = (pct_proj_reu * 0.7 + pct_proj_fin * 0.3)
-    acel_proj     = acelerador(ating_proj)
+    acel_proj     = acelerador(ating_proj, mes, ano)
     comissao_proj = ote["variavel"] * (ating_proj / 100) * metas["rampagem"] * acel_proj
 
     def serie_acts(lista):
@@ -471,7 +480,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
             "atingimento":   arred(ating),
             "acelerador":    acel,
             "estimada":      arred(comissao),
-            "comissionando": ating >= 60,
+            "comissionando": ating >= gatilho_minimo(mes, ano),
             "projecao": {
                 "valorFin":    arred(proj_fin),
                 "qtdReu":      arred(proj_reu),
@@ -526,7 +535,7 @@ def buscar_referidos():
     return todos
 
 # ── CÁLCULO CLOSER ───────────────────────────────────────────
-def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos):
+def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos, mes=None, ano=None):
     hoje      = date.today()
     mes_atual = hoje.strftime("%Y-%m")
 
@@ -597,7 +606,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     pct_fin = (valor_multi / metas["meta_fin"]) if metas["meta_fin"] > 0 else 0
     ating   = pct_fin * 100
 
-    acel     = acelerador(ating)
+    acel     = acelerador(ating, mes, ano)
     comissao = ote["variavel"] * (ating / 100) * metas["rampagem"] * acel
 
     # Projeção
@@ -605,7 +614,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     du = metas["dias_uteis"]
     proj_fin     = (valor_multi / dp) * du
     pct_proj_fin = (proj_fin / metas["meta_fin"] * 100) if metas["meta_fin"] > 0 else 0
-    acel_proj    = acelerador(pct_proj_fin)
+    acel_proj    = acelerador(pct_proj_fin, mes, ano)
     comissao_proj = ote["variavel"] * (pct_proj_fin / 100) * metas["rampagem"] * acel_proj
 
     def serie_acts(lista):
@@ -659,7 +668,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
             "atingimento":   arred(ating),
             "acelerador":    acel,
             "estimada":      arred(comissao),
-            "comissionando": ating >= 60,
+            "comissionando": ating >= gatilho_minimo(mes, ano),
             "projecao": {
                 "valorFin":    arred(proj_fin),
                 "atingimento": arred(pct_proj_fin),
@@ -834,7 +843,7 @@ def api_sdr():
         activities      = buscar_activities(mes, ano)
         qualificador_id = buscar_qualificador_id(nome)
 
-        resultado = calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities)
+        resultado = calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, activities, mes, ano)
         return jsonify(limpar_nans(resultado))
 
     except Exception as e:
@@ -905,7 +914,7 @@ def api_closer():
         activities = buscar_activities(mes, ano)
         referidos  = buscar_referidos()
 
-        resultado = calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos)
+        resultado = calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, referidos, mes, ano)
         return jsonify(limpar_nans(resultado))
 
     except Exception as e:
