@@ -115,6 +115,17 @@ def ajustar_hora(hora_str):
     except:
         return hora_str
 
+def ts_br(ts_str):
+    # Converte timestamp UTC do Pipedrive para data BRT (UTC-3)
+    if not ts_str:
+        return ""
+    s = str(ts_str)[:16]
+    try:
+        dt = datetime.strptime(s, "%Y-%m-%d %H:%M") - timedelta(hours=3)
+        return dt.strftime("%Y-%m-%d")
+    except Exception:
+        return str(ts_str)[:10]
+
 def due_br(act):
     d = str(act.get("due_date", "") or "")[:10]
     t = str(act.get("due_time", "") or "")[:5]
@@ -296,7 +307,7 @@ def buscar_deals(mes=None, ano=None):
         lote = data.get("data") or []
         # Filtra pelo mês selecionado
         for d in lote:
-            wt = str(d.get("won_time", ""))[:7]
+            wt = ts_br(d.get("won_time", ""))[:7]
             if wt == mes_str:
                 todos.append(d)
         mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
@@ -450,7 +461,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
     def serie_deals(lista):
         mapa = {}
         for d in lista:
-            dt = str(d.get("won_time", ""))[:10]
+            dt = ts_br(d.get("won_time", ""))
             if dt:
                 v = float(cf(d, CF_MULTIPLICADOR) or 0)
                 mapa[dt] = mapa.get(dt, 0) + v
@@ -495,7 +506,7 @@ def calcular(nome, user_id, qualificador_id, colaborador, metas, ote, deals, act
         },
         "tabelas": {
             "proximasReunioes": [{"deal_id": a.get("deal_id"), "nome": a.get("subject", ""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in proximas],
-            "reunioesGanhas":   [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time", ""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0)} for d in deals_ganhos],
+            "reunioesGanhas":   [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": ts_br(d.get("won_time", "")), "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0)} for d in deals_ganhos],
             "reunioesDesq": [{
                 "deal_id":      a.get("deal_id"),
                 "proprietario": next((d.get("owner_name") or (d.get("user_id") or {}).get("name","") for d in deals if d["id"] == a.get("deal_id")), "--")
@@ -525,7 +536,7 @@ def buscar_referidos():
         data = resp.json()
         lote = data.get("data") or []
         for d in lote:
-            add_time = str(d.get("add_time", ""))[:7]
+            add_time = ts_br(d.get("add_time", ""))[:7]
             if add_time == mes_atual:
                 todos.append(d)
         mais = data.get("additional_data", {}).get("pagination", {}).get("more_items_in_collection", False)
@@ -628,7 +639,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     def serie_deals(lista):
         mapa = {}
         for d in lista:
-            dt = str(d.get("won_time", ""))[:10]
+            dt = ts_br(d.get("won_time", ""))
             if dt:
                 v = float(cf(d, CF_MULTIPLICADOR) or 0)
                 mapa[dt] = mapa.get(dt, 0) + v
@@ -637,7 +648,7 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
     def serie_referidos(lista):
         mapa = {}
         for d in lista:
-            dt = str(d.get("add_time", ""))[:10]
+            dt = ts_br(d.get("add_time", ""))
             if dt:
                 mapa[dt] = mapa.get(dt, 0) + 1
         return [{"data": k, "qtd": v} for k, v in sorted(mapa.items())]
@@ -682,8 +693,8 @@ def calcular_closer(nome, user_id, colaborador, metas, ote, deals, activities, r
         },
         "tabelas": {
             "reunioesRealizadas": [{"deal_id": a.get("deal_id"), "nome": a.get("subject",""), "data": a.get("due_date"), "hora": ajustar_hora(a.get("due_time"))} for a in reu_realizadas],
-            "ganhos": [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": str(d.get("won_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in deals_ganhos],
-            "referidos": [{"deal_id": d["id"], "nome": d.get("title"), "data_criacao": str(d.get("add_time",""))[:10], "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in refs_closer],
+            "ganhos": [{"deal_id": d["id"], "nome": d.get("title"), "data_ganho": ts_br(d.get("won_time","")), "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in deals_ganhos],
+            "referidos": [{"deal_id": d["id"], "nome": d.get("title"), "data_criacao": ts_br(d.get("add_time","")), "valor_bruto": float(d.get("value") or 0), "valor_multi": float(cf(d, CF_MULTIPLICADOR) or 0), "closer": owner_name(d)} for d in refs_closer],
         },
         "tabela_price_url": TABELA_PRICE_URL,
         "atualizadoEm": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
