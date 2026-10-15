@@ -75,7 +75,8 @@ def arred(v):
         return 0.0
 
 def gatilho_minimo(mes=None, ano=None):
-    """A partir de set/2026 o gatilho mínimo para comissionar sobe para 70%."""    hoje = date.today()
+    # A partir de set/2026 o gatilho minimo para comissionar sobe para 70%.
+    hoje = date.today()
     mes  = mes or hoje.month
     ano  = ano or hoje.year
     if ano > 2026 or (ano == 2026 and mes >= 9):
