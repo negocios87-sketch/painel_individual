@@ -931,6 +931,21 @@ def api_closer():
     except Exception as e:
         import traceback
         return jsonify({"erro": str(e), "trace": traceback.format_exc()}), 500
+        
+@app.route("/debug/user")
+def debug_user():
+    if "nome" not in session:
+        return jsonify({"erro": "não autenticado"}), 401
+    nome = session["nome"]
+    users = buscar_users()
+    user_id = encontrar_user_id(users, nome)
+    qual_id = buscar_qualificador_id(nome)
+    return jsonify({
+        "nome": nome,
+        "user_id": user_id,
+        "qualificador_id": qual_id,
+        "todos_com_nome_parecido": {str(uid): uname for uid, uname in users.items() if "amanda" in uname.lower()}
+    })
 
 @app.route("/api/tipo")
 def api_tipo():
